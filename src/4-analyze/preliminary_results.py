@@ -13,6 +13,7 @@ import xarray as xr
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import LineString
+from shapely.ops import nearest_points
 import numba
 # import zarr
 import matplotlib.pyplot as plt
@@ -140,6 +141,7 @@ fact_ect = 1.39  # uitgegaam van 11 deg gw temp
 
 path_geotop = "p:/gis-data/GEOTOP/geotop.zarr"
 path_regis = "p:/gis-data/REGIS/REGIS2.2/REGIS_v2_2.nc"
+path_cl = "data/1-external/cl-analyses/xyzv_analyses_gw_aggregate_csv.csv"
 path_profiles = Path("data/3-input/priority_lines")
 path_output = Path("data/4-output/priority_lines_processed")
 # path_profiles = "data/1-external/shapes/test.shp"
@@ -151,6 +153,8 @@ max_ds = 40
 geotop = xr.open_zarr(path_geotop)
 most_occurring = geotop["meest_waarschijnlijke_lithoklasse"]
 regis = xr.open_dataset(path_regis)
+dfcl = df = pd.read_csv(path_cl)
+gdfcl = gpd.GeoDataFrame(dfcl, geometry=gpd.points_from_xy(x=dfcl["x"],y=dfcl["y"]), crs="epsg:28992")
 # legends
 gt_col,gt_lev,gt_lab = imod.visualize.read_imod_legend(leg_litho)
 # cl_col,cl_lev,cl_lab = imod.visualize.read_imod_legend(leg_cl)
@@ -215,6 +219,7 @@ for i,fn in enumerate(path_profiles.glob("*.xyz")):
         rho = rho.where(rho["top"] > rho["doi"])
         # laat weg waar de ds te groot is: missende data
         rho = rho.where(rho["ds"].shift(s=-1, fill_value=True) < max_ds)  #
+        rho = rho.dropna(dim="layer", how="all")
 
 
         try:
