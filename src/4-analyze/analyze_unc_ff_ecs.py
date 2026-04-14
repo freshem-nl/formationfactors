@@ -1,9 +1,12 @@
 """Script to make boxplots per lithostrat category"""
-
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
+import seaborn as sns
 from pathlib import Path
+
+sns.set_theme()
 
 path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
@@ -23,16 +26,21 @@ for column in ["LITHOKLASSE_CD", "StratLithoklasse"]:
     for code in df[column].unique().dropna():
         print(f"{column} {code}")
         dfsel = df.loc[df[column] == code]
+        dfsel = dfsel.dropna(subset=["SIP3_FormationFactor_F_3W_unitless","SIP3_SurfCond_Sigmas_3W_S/m"], how="all")
 
         fig, axes = plt.subplots(1, 2, figsize=(8,5))
-        do_bootstrap = len(dfsel) > 2
-        dfsel.boxplot(column=["SIP3_FormationFactor_F_3W_unitless"], ax=axes[0], notch=do_bootstrap, bootstrap=1000)
-        dfsel.boxplot(column=["SIP3_SurfCond_Sigmas_3W_S/m"], ax=axes[1], notch=do_bootstrap, bootstrap=1000)
+        # do_bootstrap = len(dfsel) > 2
         n = dfsel[["SIP3_FormationFactor_F_3W_unitless","SIP3_SurfCond_Sigmas_3W_S/m"]].count()
+        for i, ff_or_ecs in enumerate(["SIP3_FormationFactor_F_3W_unitless","SIP3_SurfCond_Sigmas_3W_S/m"]):
+            sns.boxplot(x=column,y=ff_or_ecs,data=dfsel,ax=axes[i])
+            sns.swarmplot(x=column,y=ff_or_ecs,data=dfsel,hue="SIP3_FormationFactor_F_3W_unitless",ax=axes[i], legend=False)#,hue=np.arange(n[ff_or_ecs]),ax=axes[i])
+        # dfsel.boxplot(column=["SIP3_FormationFactor_F_3W_unitless"], ax=axes[0], notch=do_bootstrap, bootstrap=1000)
+        # dfsel.boxplot(column=["SIP3_SurfCond_Sigmas_3W_S/m"], ax=axes[1], notch=do_bootstrap, bootstrap=1000)
+        
         axes[0].set_title(f"n = {n['SIP3_FormationFactor_F_3W_unitless']}")
         axes[1].set_title(f"n = {n['SIP3_SurfCond_Sigmas_3W_S/m']}")
-        fig.suptitle(f"{column} = {code.upper()}", fontsize="x-large")
-        plt.savefig(path_results / f"{column}_{code.upper()}.png", dpi=150, bbox_inches="tight")
+        fig.suptitle(f"{column} = {code}", fontsize="x-large")
+        plt.savefig(path_results / f"{column}_{code.lower()}.png", dpi=150, bbox_inches="tight")
         plt.tight_layout(rect=[0, 0.03, 1, 0.95])
         plt.close()
 

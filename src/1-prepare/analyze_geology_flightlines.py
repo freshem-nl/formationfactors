@@ -56,7 +56,7 @@ def lithostrat_length_geotop(geotop, stratname, lithoname, include=None):
         include = xr.ones_like(geotop["strat"].isel(z=0)).astype(bool)
     _sum_lithostrat_length(geotop["lithok"].values, geotop["strat"].values, lithoindex, stratindex, include.values, out.values)
     return out / 2.  # nvoxels to length in m
-
+    
 @numba.njit
 def _sum_formation_length(top, bot, include, minbot, maxtop, out):
     nform, ny, nx = top.shape
@@ -161,32 +161,36 @@ for fn in path_flightlines.glob("*.shp"):
     fl = gpd.read_file(fn)
     flines = pd.concat((flines,fl))
 flines.to_file(path_output / "vlieglijnen.gpkg")
-da_flines = imod.prepare.rasterize(flines, regis["top"].isel(formation=0, drop=True))
+da_flines_regis = imod.prepare.rasterize(flines, regis["top"].isel(formation=0, drop=True))
+da_flines_gt = imod.prepare.rasterize(flines, geotop["lithok"].isel(z=0, drop=True))
 
 # selecteer geotop en regis op vlieglijnen
-geotop_lithostrat = lithostrat_length_geotop(geotop,stratname,lithoname,include=da_flines.notnull())
+geotop_lithostrat = lithostrat_length_geotop(geotop,stratname,lithoname,include=da_flines_gt.notnull())
 gtl = geotop_lithostrat.to_pandas()
 gtl.to_csv(path_output / "lithostrat_geotop.csv")
-gtl.stack().sort_values(ascending=False).to_csv("lithostrat_geotop_sorted.csv")
+gtl.stack().sort_values(ascending=False).to_csv(path_output / "lithostrat_geotop_sorted.csv")
 
-regis_frm_length = formation_length_regis(regis, include=da_flines.notnull())
+regis_frm_length = formation_length_regis(regis, include=da_flines_regis.notnull())
 regis_frm_length.to_series().to_csv(path_output / "regis_frm_length.csv")
 regis_frm_length.to_series().sort_values(ascending=False).to_csv(path_output / "regis_frm_length_sorted.csv")
 
 
 # alleen in zout: selecteer waar cl > 150m oid
 da_depthbrack = imod.rasterio.open(path_depthbrack)
-regridder = xu.CentroidLocatorRegridder(source=da_depthbrack, target=da_flines)
+regridder = xu.CentroidLocatorRegridder(source=da_depthbrack, target=da_flines_regis)
 da_depthbrack = regridder.regrid(da_depthbrack)
-include = (da_flines.notnull())&(da_depthbrack>-150)
+include_regis = (da_flines_regis.notnull())&(da_depthbrack>-150)
+regridder = xu.CentroidLocatorRegridder(source=da_depthbrack, target=da_flines_gt)
+da_depthbrack = regridder.regrid(da_depthbrack)
+include_gt = (da_flines_gt.notnull())&(da_depthbrack>-150)
 
 
-geotop_lithostrat = lithostrat_length_geotop(geotop,stratname,lithoname,include=include)
+geotop_lithostrat = lithostrat_length_geotop(geotop,stratname,lithoname,include=include_gt)
 gtl = geotop_lithostrat.to_pandas()
 gtl.to_csv(path_output / "lithostrat_geotop_insaline.csv")
-gtl.stack().sort_values(ascending=False).to_csv("lithostrat_geotop_insaline_sorted.csv")
+gtl.stack().sort_values(ascending=False).to_csv(path_output / "lithostrat_geotop_insaline_sorted.csv")
 
-regis_frm_length = formation_length_regis(regis, include=include)
+regis_frm_length = formation_length_regis(regis, include=include_regis)
 regis_frm_length.to_series().to_csv(path_output / "regis_frm_length_insaline.csv")
 regis_frm_length.to_series().sort_values(ascending=False).to_csv(path_output / "regis_frm_length_insaline_sorted.csv")
 
