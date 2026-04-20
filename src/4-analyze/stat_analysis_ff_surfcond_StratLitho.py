@@ -272,7 +272,7 @@ valid_stratlitho = {k for k, v in group_size_stratlitho.items() if v >= 5}
 
 df_litho_refined = df[df[litho_col].isin(valid_litho)].copy()
 df_strat_refined = df[df[strat_col].isin(valid_strat)].copy()
-
+df_stratlitho_refined = df[df[stratlitho_col].isin(valid_stratlitho)].copy()
 
 #%% kruskal-wallis test for stratigrahpy within each lithoclass
 results_litho_strat = []
@@ -363,5 +363,92 @@ for variable in ["formation_factor", "surface_cond"]:
         dunn_litho_strat_all_df = pd.concat(dunn_litho_strat_all, ignore_index=True)
         dunn_litho_strat_all_df.to_csv(path_results / "dunn_strat_all_litho.csv", index=False)
 
-#%% # histogram for stratigraphy within each lithoclass
+#%% Boxplots per lithoklasse met stratigrafie op de x-as (los voor FF en surfcond)
+
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+# outputmap voor figuren
+path_figs = path_results / "boxplots_litho_strat"
+path_figs.mkdir(exist_ok=True, parents=True)
+
+# instellingen
+min_n_per_strat_in_litho = 5   # pas aan als je wilt (bijv. 3 of 5)
+show_points = True             # puntjes (stripplot) aan/uit
+use_log_y = False              # optioneel: log-scale y-as
+
+def _order_by_median(subdf, value_col, group_col):
+    """Bepaal een nette volgorde voor categorieën op basis van mediane waarde."""
+    med = subdf.groupby(group_col)[value_col].median().sort_values()
+    return med.index.tolist()
+
+def plot_box_per_litho(df, value_col, value_label, filename_stub):
+    # werk per lithoklasse
+
+    for litho in valid_litho:
+
+        df_l = df[df[litho_col] == litho].copy()
+        if df_l.empty:
+            continue
+
+        # filter stratigrafieën binnen deze litho met voldoende n
+        counts = df_l[strat_col].value_counts()
+        valid_stratlitho = counts[counts >= min_n_per_strat_in_litho].index
+        df_l = df_l[df_l[strat_col].isin(valid_stratlitho)].copy()
+        
+
+        # als er na filteren te weinig groepen overblijven, skip
+        if df_l[strat_col].nunique() < 2:
+            continue
+
+        # kies een volgorde (median-based)
+        order = _order_by_median(df_l, value_col=value_col, group_col=strat_col)
+
+        # figuur
+        plt.figure(figsize=(10, 6))
+        ax = sns.boxplot(
+            data=df_l,
+            x=strat_col,
+            y=value_col,
+            order=order,
+            color="#5B8FF9",
+            width=0.5,
+            showfliers=True
+        )
+
+        if show_points:
+            sns.stripplot(
+                data=df_l,
+                x=strat_col,
+                y=value_col,
+                order=order,
+                color="0.35",
+                size=4,
+                jitter=0.08,
+                alpha=0.8
+            )
+
+        ax.set_title(f"{litho} — {value_label} per stratigrafie")
+        ax.set_xlabel("stratigrafie")
+        ax.set_ylabel(value_label)
+
+        if use_log_y:
+            ax.set_yscale("log")
+
+        plt.xticks(rotation=30, ha="right")
+        plt.tight_layout()
+
+        # opslaan
+        out_png = path_figs / f"{filename_stub}_litho-{litho}.png"
+        plt.savefig(out_png, dpi=300)
+        plt.close()
+
+# maak figuren voor FF en surface conductivity
+plot_box_per_litho(df, value_col=ff_col,       value_label="formation factor (FF)", filename_stub="box_ff_strat")
+plot_box_per_litho(df, value_col=surfcond_col, value_label="surface conductivity σₛ (S/m)", filename_stub="box_surfcond_strat")
+
+print(f"Boxplots opgeslagen in: {path_figs}")
+
 
