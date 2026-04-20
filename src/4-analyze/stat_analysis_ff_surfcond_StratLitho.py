@@ -149,7 +149,8 @@ def dunn_matrix_refined(df, val_col, group_col, p_adjust="fdr_bh"):
 for col in [ff_col, surfcond_col]:
     if col == ff_col:
         colname = "ff"
-    else: "surf_cond"
+    else: 
+        colname ="surf_cond"
     
     print(f"Testing normality for {colname}")
     x = df[col]
@@ -174,8 +175,9 @@ for col in [ff_col, surfcond_col]:
     axes[1].set_title("Q–Q plot (log-transformed)")
 
     plt.tight_layout()
-    plt.show()
     plt.savefig(path_results / f"q-q_plot_{colname}.png")
+    plt.show()
+    plt.close()
 
     # histogram
 
@@ -188,8 +190,10 @@ for col in [ff_col, surfcond_col]:
     axes[1].set_title("Histogram log-transformed")
 
     plt.tight_layout()
-    plt.show()
     plt.savefig(path_results / f"histogram_{colname}.png")
+    plt.show()
+    plt.close()
+
 
 
 
@@ -214,6 +218,13 @@ results.append({
     **kruskal_per_group(df, ff_col, strat_col)
 })
 
+# FF & stratlithoclass
+results.append({
+    "variable": "formation_factor",
+    "grouping": "stratlithoklasse",
+    **kruskal_per_group(df, ff_col, stratlitho_col)
+})
+
 # - surface conductivity -
 
 # surface conductivity & lithoclass
@@ -230,6 +241,13 @@ results.append({
     **kruskal_per_group(df, surfcond_col, strat_col)
 })
 
+# surface conductivity & stratlithoclass
+results.append({
+    "variable": "surface_cond",
+    "grouping": "stratlithoklasse",
+    **kruskal_per_group(df, surfcond_col, stratlitho_col)
+})
+
 # create df
 results_df = pd.DataFrame(results)
 
@@ -241,7 +259,7 @@ print(results_df[[
     "n_groups"
 ]])
 
-
+results_df.to_csv(path_results / "kruskal_results.csv", index=False)
 #%% # filter for groups with >= 5 samples
 
 group_size_litho = collect_group_size(df, litho_col)
@@ -254,7 +272,6 @@ valid_stratlitho = {k for k, v in group_size_stratlitho.items() if v >= 5}
 
 df_litho_refined = df[df[litho_col].isin(valid_litho)].copy()
 df_strat_refined = df[df[strat_col].isin(valid_strat)].copy()
-df_stratlitho_refined = df[df[stratlitho_col].isin(valid_stratlitho)].copy()
 
 
 #%% kruskal-wallis test for stratigrahpy within each lithoclass
@@ -273,14 +290,14 @@ for litho in valid_litho:
     df_litho = df[df[litho_col] == litho]
     results_litho_strat.append({
         "variable": "surface_cond",
-        "grouping": f"stratigrafie within lithoclass {litho}",
+        "grouping": f"stratigrafie binnen lithoklasse {litho}",
         "lithoklasse": litho,
         **kruskal_per_group(df_litho, surfcond_col, strat_col)
     })
 
 # create df
 results_litho_strat_df = pd.DataFrame(results_litho_strat)
-results_df.to_csv(path_results / "kruskal_results.csv", index=False)
+results_litho_strat_df.to_csv(path_results / "kruskal_litho_strat_results.csv", index=False)
 
 
 #%% Dunn post-hoc test with Benjamini–Hochberg correction
@@ -345,4 +362,6 @@ for variable in ["formation_factor", "surface_cond"]:
     if dunn_litho_strat_all:
         dunn_litho_strat_all_df = pd.concat(dunn_litho_strat_all, ignore_index=True)
         dunn_litho_strat_all_df.to_csv(path_results / "dunn_strat_all_litho.csv", index=False)
+
+#%% # histogram for stratigraphy within each lithoclass
 
