@@ -22,9 +22,13 @@ import seaborn as sns
 path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
-path_results = Path("data/4-output/ff_ecs_uncertainty")
+path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results")
+
+alpha = 0.1
 
 os.chdir(r"c:\Users\dam_re\OneDrive - Stichting Deltares\Documents\Projecten\FRESHEM\scripts\formationfactors")
+
+path_results.mkdir(exist_ok=True, parents=True)
 #%% create dataframe with ff and ECs
 
 # read data
@@ -32,7 +36,7 @@ df_all = pd.read_excel(fn_labresults,
     keep_default_na=False,
     na_values=["", " ", "NULL", "NaN"] # otherwise the formation of Naaldwijk (NA) is set as NaN
 )
-df = df_all.copy()
+df = df_all.loc[df_all["Type_name"]=="FF_Disturbed"].copy()
 
 # short name for column names
 ff_col = "SIP3_FormationFactor_F_3W_unitless"
@@ -115,14 +119,14 @@ def dunn_matrix_refined(df, val_col, group_col, p_adjust="fdr_bh"):
 
     # give meaningful names to the group columns in the long format
     if group_col == litho_col:
-        group1 = "lithoclass1"
-        group2 = "lithoclass2"
+        group1 = "lithoklasse1"
+        group2 = "lithoklasse2"
     elif group_col == strat_col:
-        group1 = "stratigraphy1"
-        group2 = "stratigraphy2"
+        group1 = "stratigrafie1"
+        group2 = "stratigrafie2"
     elif group_col == stratlitho_col:
-        group1 = "stratlithoclass1"
-        group2 = "stratlithoclass2"
+        group1 = "stratlithoklasse1"
+        group2 = "stratlithoklasse2"
 
     # convert matrix to long format (only unique pairs)
     rows = []
@@ -210,13 +214,6 @@ results.append({
     **kruskal_per_group(df, ff_col, strat_col)
 })
 
-# FF & lithostraticlass
-results.append({
-    "variable": "formation_factor",
-    "grouping": "StratLithoklasse",
-    **kruskal_per_group(df, ff_col, stratlitho_col)
-})
-
 # - surface conductivity -
 
 # surface conductivity & lithoclass
@@ -233,14 +230,7 @@ results.append({
     **kruskal_per_group(df, surfcond_col, strat_col)
 })
 
-# surface conductivity & lithostraticlass
-results.append({
-    "variable": "surface_cond",
-    "grouping": "StratLithoklasse",
-    **kruskal_per_group(df, surfcond_col, stratlitho_col)
-})
-
-# create 
+# create df
 results_df = pd.DataFrame(results)
 
 print(results_df[[
@@ -266,29 +256,93 @@ df_litho_refined = df[df[litho_col].isin(valid_litho)].copy()
 df_strat_refined = df[df[strat_col].isin(valid_strat)].copy()
 df_stratlitho_refined = df[df[stratlitho_col].isin(valid_stratlitho)].copy()
 
+
+#%% kruskal-wallis test for stratigrahpy within each lithoclass
+results_litho_strat = []
+for litho in valid_litho:
+    print(f"Testing stratigraphy within lithoclass {litho}")
+    df_litho = df[df[litho_col] == litho]
+    results_litho_strat.append({
+        "variable": "formation_factor",
+        "grouping": f"stratigrafie binnen lithoklasse {litho}",
+        "lithoklasse": litho,
+        **kruskal_per_group(df_litho, ff_col, strat_col)
+    })
+
+for litho in valid_litho:
+    df_litho = df[df[litho_col] == litho]
+    results_litho_strat.append({
+        "variable": "surface_cond",
+        "grouping": f"stratigrafie within lithoclass {litho}",
+        "lithoklasse": litho,
+        **kruskal_per_group(df_litho, surfcond_col, strat_col)
+    })
+
+# create df
+results_litho_strat_df = pd.DataFrame(results_litho_strat)
+results_df.to_csv(path_results / "kruskal_results.csv", index=False)
+
+
 #%% Dunn post-hoc test with Benjamini–Hochberg correction
 
-# ff & litho
 dunn_ff_litho = dunn_matrix_refined(df_litho_refined, val_col = ff_col, group_col=litho_col, p_adjust="fdr_bh")
 dunn_ff_strat = dunn_matrix_refined(df_strat_refined, val_col = ff_col, group_col=strat_col, p_adjust="fdr_bh")
-dunn_ff_stratlitho = dunn_matrix_refined(df_stratlitho_refined, val_col = ff_col, group_col=stratlitho_col, p_adjust="fdr_bh")
 dunn_surfcond_litho = dunn_matrix_refined(df_litho_refined, val_col = surfcond_col, group_col=litho_col, p_adjust="fdr_bh")
 dunn_surfcond_strat = dunn_matrix_refined(df_strat_refined, val_col = surfcond_col, group_col=strat_col, p_adjust="fdr_bh")
-dunn_surfcond_stratlitho = dunn_matrix_refined(df_stratlitho_refined, val_col = surfcond_col, group_col=stratlitho_col, p_adjust="fdr_bh")
 
-print(dunn_ff_litho.loc[dunn_ff_litho["p_value"] < 0.1])
-print(dunn_ff_strat.loc[dunn_ff_strat["p_value"] < 0.1])
-print(dunn_ff_stratlitho.loc[dunn_ff_stratlitho["p_value"] < 0.1])
-print(dunn_surfcond_litho.loc[dunn_surfcond_litho["p_value"] < 0.1])
-print(dunn_surfcond_strat.loc[dunn_surfcond_strat["p_value"] < 0.1])
-print(dunn_surfcond_stratlitho.loc[dunn_surfcond_stratlitho["p_value"] < 0.1])
-
-#%% save output
-results_df.to_csv(path_results / "kruskal_results.csv", index=False)
 dunn_ff_litho.to_csv(path_results / "dunn_ff_litho.csv", index=False)
 dunn_ff_strat.to_csv(path_results / "dunn_ff_strat.csv", index=False)
-dunn_ff_stratlitho.to_csv(path_results / "dunn_ff_stratlitho.csv", index=False)
 dunn_surfcond_litho.to_csv(path_results / "dunn_surfcond_litho.csv", index=False)
 dunn_surfcond_strat.to_csv(path_results / "dunn_surfcond_strat.csv", index=False)
-dunn_surfcond_stratlitho.to_csv(path_results / "dunn_surfcond_stratlitho.csv", index=False) 
+
+#%% Dunn post-hoc test with Benjamini–Hochberg correction for stratigraphy within each lithoclass
+dunn_litho_strat_all = []
+
+for variable in ["formation_factor", "surface_cond"]:
+    print(f"Performing Dunn post-hoc test for stratigraphy within lithoclass for {variable}")
+    
+    if variable == "formation_factor":
+        var_short = "ff"
+        val_col = ff_col 
+    elif variable == "surface_cond":
+        var_short = "surfcond"
+        val_col = surfcond_col
+
+    dunn_litho_strat_var = []
+    for litho in valid_litho:
+        print(var_short, litho)
+        
+        # select stratigraphy within lithoclass with >=5 samples
+        sel = (results_litho_strat_df["lithoklasse"] == litho) & (results_litho_strat_df["variable"] == variable)
+        # no entry -> continue to next lithoclass
+        if not sel.any():
+            continue  
+        data = results_litho_strat_df.loc[sel]["group_sizes"].values[0]
+        strat = list(data.keys())
+
+        # perform dunn test if there are at least 2 stratigraphic groups with >=5 samples
+        if len(strat)>1:
+            df_litho = df[(df[litho_col] == litho) & (df[strat_col].isin(strat))]
+            results_dunn = pd.DataFrame(dunn_matrix_refined(df_litho, val_col = val_col, group_col=strat_col, p_adjust="fdr_bh"))
+            results_dunn.insert(loc=0, column="variable", value=variable)
+            results_dunn.insert(loc=1, column="lithoclass", value=litho)
+            results_dunn.to_csv(path_results / f"dunn_{var_short}_strat_within_{litho}.csv", index=False)
+            # create multiple tables            
+            dunn_litho_strat_var.append(results_dunn)
+            dunn_litho_strat_all.append(results_dunn)
+
+        # combine all lithoclasses for this variable into one table
+        if dunn_litho_strat_var:
+            dunn_litho_strat_var_df = pd.concat(dunn_litho_strat_var, ignore_index=True)
+            # only significant results
+            dunn_litho_strat_var_df_sig = dunn_litho_strat_var_df.loc[dunn_litho_strat_var_df["p_value"] < alpha]
+            dunn_litho_strat_var_df_sig.sort_values("p_value", inplace=True)
+            # save
+            dunn_litho_strat_var_df.to_csv(path_results / f"dunn_{var_short}_strat_all_litho.csv", index=False)
+            dunn_litho_strat_var_df_sig.to_csv(path_results / f"dunn_{var_short}_strat_litho_significant.csv", index=False)
+
+    # combine for both variables into one table
+    if dunn_litho_strat_all:
+        dunn_litho_strat_all_df = pd.concat(dunn_litho_strat_all, ignore_index=True)
+        dunn_litho_strat_all_df.to_csv(path_results / "dunn_strat_all_litho.csv", index=False)
 
