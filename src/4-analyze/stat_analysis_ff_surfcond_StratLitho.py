@@ -17,16 +17,18 @@ import os
 import numpy as np
 import scikit_posthocs as sp
 import seaborn as sns
+import numpy as np
 
 #%% paths and parameters
+# run from basedir, assuming script resides in subdir of src/
+os.chdir(os.path.join(os.path.dirname(__file__), "..", ".."))
+
 path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
 path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results")
 
 alpha = 0.1
-
-os.chdir(r"c:\Users\dam_re\OneDrive - Stichting Deltares\Documents\Projecten\FRESHEM\scripts\formationfactors")
 
 path_results.mkdir(exist_ok=True, parents=True)
 #%% create dataframe with ff and ECs
@@ -60,6 +62,8 @@ if len(df.loc[~df[ff_col].notnull()])>0: #TODO: if SIP3 is missing, take SIP5
     print("Warning: some samples have missing formation factors, these are removed from the analysis.\nConsider using SIP5_formation_factor_F_3W_unitless if SIP3 is missing.")
 df = df.loc[df[ff_col].notnull() & df[surfcond_col].notnull() & df[litho_col].notnull() & df[strat_col].notnull() & df[stratlitho_col].notnull()]
 
+df["log10_FF"] = np.log10(df[ff_col])
+df["log10_surfcond"] = np.log10(df[surfcond_col])
 #%% definitions
 
 def collect_group_size(df, group_col):
@@ -108,7 +112,8 @@ def kruskal_per_group(
         "H": H,
         "p_value": p,
         "n_groups": len(groups),
-        "group_sizes": group_sizes
+        "group_sizes": group_sizes,
+        "strats": list(group_sizes.keys())
     }
 
 def dunn_matrix_refined(df, val_col, group_col, p_adjust="fdr_bh"):
@@ -143,6 +148,169 @@ def dunn_matrix_refined(df, val_col, group_col, p_adjust="fdr_bh"):
     rows_df = pd.DataFrame(rows).sort_values("p_value").reset_index(drop=True)
 
     return rows_df
+
+def _order_by_median(subdf, value_col, group_col):
+    """ determine order for categories based on median value."""
+    med = subdf.groupby(group_col)[value_col].median().sort_values()
+    return med.index.tolist()
+
+def plot_box_per_litho(df, value_col, value_label, filename_stub):
+    """ create boxplots per lithoclass per stratigraphy """
+
+    for litho in valid_litho:
+
+        df_l = df[df[litho_col] == litho].copy()
+        if df_l.empty:
+            continue
+
+        # filter stratigrafieën binnen deze litho met voldoende n
+        counts = df_l[strat_col].value_counts()
+        valid_stratlitho = counts[counts >= min_n_per_strat_in_litho].index
+        df_l = df_l[df_l[strat_col].isin(valid_stratlitho)].copy()
+        
+
+        # als er na filteren te weinig groepen overblijven, skip
+        if df_l[strat_col].nunique() < 2:
+            continue
+
+        # kies een volgorde (median-based)
+        order = _order_by_median(df_l, value_col=value_col, group_col=strat_col)
+
+        # figuur
+        plt.figure(figsize=(10, 6))
+        ax = sns.boxplot(
+            data=df_l,
+            x=strat_col,
+            y=value_col,
+            order=order,
+            color="#5B8FF9",
+            width=0.5,
+            showfliers=True
+        )
+
+        if show_points:
+            sns.stripplot(
+                data=df_l,
+                x=strat_col,
+                y=value_col,
+                order=order,
+                color="0.35",
+                size=4,
+                jitter=0.08,
+                alpha=0.8
+            )
+
+        ax.set_title(f"{litho} — {value_label} per stratigrafie")
+        ax.set_xlabel("stratigrafie")
+        ax.set_ylabel(value_label)
+
+        if use_log_y:
+            ax.set_yscale("log")
+
+        plt.xticks(rotation=30, ha="right")
+        plt.tight_layout()
+
+        # opslaan
+        out_png = path_figs / f"{filename_stub}_litho-{litho}.png"
+        plt.savefig(out_png, dpi=300)
+        plt.close()
+
+
+def calc_stratlitho_medians(
+    df,
+    stratlitho_combos,              # dataframe met kolommen: lithoklasse + strats (list)
+    ff_col,
+    surfcond_col,
+    litho_col,
+    strat_col,
+    manual_groups=None,     # list of dicts (zie boven)
+):
+    manual_groups = manual_groups or []
+
+    # groepeer rules per litho voor snelheid/overzicht
+    rules_by_litho = {}
+    for r in manual_groups:
+        rules_by_litho.setdefault(r["lithoklasse"], []).append(r)
+
+    out_rows = []
+
+    for _, row in stratlitho_combos.iterrows():
+        litho = row[litho_col] if litho_col in stratlitho_combos.columns else row["lithoklasse"]
+        strats = row["strats"]
+
+        # ommit empty/NaN entries
+        if not isinstance(strats, (list, tuple)) or len(strats) == 0:
+            continue
+
+        # workingset: only strats that we would (initially) take individually
+        remaining = list(strats)
+
+        # 1) first apply manual merges (override)
+        for rule in rules_by_litho.get(litho, []):
+            wanted = rule["strats"]
+
+            # take only the strats that are still "remaining"
+            members = [s for s in wanted if s in remaining]
+
+            # no merge -> continue
+            if len(members) == 0:
+                continue
+
+            # calc median for this group of members
+            mask = (df[litho_col] == litho) & (df[strat_col].isin(members))
+            sub = df.loc[mask, [ff_col, surfcond_col]].dropna()
+            sub_log = df.loc[mask, ["log10_FF", "log10_surfcond"]].dropna()
+
+            if sub.empty:
+                continue
+
+            out_rows.append({
+                litho_col: litho,
+                "strat_group": rule.get("group", "+".join(members)),
+                "members": members,
+                "n": len(sub),
+                "median_ff": sub[ff_col].median(),
+                "median_surfcond": sub[surfcond_col].median(),
+                "median_log_ff": sub_log["log10_FF"].median(),
+                "median_log_surfcond": sub_log["log10_surfcond"].median(),
+                "median_log_ff_based_on_log_transformed_data": 10 ** sub_log["log10_FF"].median(),
+                "median_surfcond_based_on_log_transformed_data": 10 ** sub_log["log10_surfcond"].median(),
+                "is_manual": True,
+            })
+
+            # remove these strats from the workingset
+            remaining = [s for s in remaining if s not in members]
+
+        # 2) if there are strats left that were not manually merged, calculate individual medians for those
+        for strat in remaining:
+            mask = (df[litho_col] == litho) & (df[strat_col] == strat)
+            sub = df.loc[mask, [ff_col, surfcond_col]].dropna()
+            sub_log = df.loc[mask, ["log10_FF", "log10_surfcond"]].dropna()
+            if sub.empty:
+                continue
+
+            out_rows.append({
+                litho_col: litho,
+                "strat_group": strat,
+                "members": [strat],
+                "n": len(sub),
+                "median_ff": sub[ff_col].median(),
+                "median_surfcond": sub[surfcond_col].median(),
+                "median_log_ff": sub_log["log10_FF"].median(),
+                "median_log_surfcond": sub_log["log10_surfcond"].median(),
+                "median_log_ff_to_normal_value": 10 ** sub_log["log10_FF"].median(),
+                "median_log_surfcond_to_normal_value": 10 ** sub_log["log10_surfcond"].median(),
+                "is_manual": False,
+            })
+
+    result = pd.DataFrame(out_rows)
+
+    # sort: litho, then non-manual first (optional), then name
+    if not result.empty:
+        result = result.sort_values([litho_col, "is_manual", "strat_group"], ascending=[True, True, True])
+
+    return result
+
 
 
 #%% normal distribution test 
@@ -365,10 +533,6 @@ for variable in ["formation_factor", "surface_cond"]:
 
 #%% Boxplots per lithoklasse met stratigrafie op de x-as (los voor FF en surfcond)
 
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-from pathlib import Path
 
 # outputmap voor figuren
 path_figs = path_results / "boxplots_litho_strat"
@@ -379,71 +543,6 @@ min_n_per_strat_in_litho = 5   # pas aan als je wilt (bijv. 3 of 5)
 show_points = True             # puntjes (stripplot) aan/uit
 use_log_y = False              # optioneel: log-scale y-as
 
-def _order_by_median(subdf, value_col, group_col):
-    """Bepaal een nette volgorde voor categorieën op basis van mediane waarde."""
-    med = subdf.groupby(group_col)[value_col].median().sort_values()
-    return med.index.tolist()
-
-def plot_box_per_litho(df, value_col, value_label, filename_stub):
-    # werk per lithoklasse
-
-    for litho in valid_litho:
-
-        df_l = df[df[litho_col] == litho].copy()
-        if df_l.empty:
-            continue
-
-        # filter stratigrafieën binnen deze litho met voldoende n
-        counts = df_l[strat_col].value_counts()
-        valid_stratlitho = counts[counts >= min_n_per_strat_in_litho].index
-        df_l = df_l[df_l[strat_col].isin(valid_stratlitho)].copy()
-        
-
-        # als er na filteren te weinig groepen overblijven, skip
-        if df_l[strat_col].nunique() < 2:
-            continue
-
-        # kies een volgorde (median-based)
-        order = _order_by_median(df_l, value_col=value_col, group_col=strat_col)
-
-        # figuur
-        plt.figure(figsize=(10, 6))
-        ax = sns.boxplot(
-            data=df_l,
-            x=strat_col,
-            y=value_col,
-            order=order,
-            color="#5B8FF9",
-            width=0.5,
-            showfliers=True
-        )
-
-        if show_points:
-            sns.stripplot(
-                data=df_l,
-                x=strat_col,
-                y=value_col,
-                order=order,
-                color="0.35",
-                size=4,
-                jitter=0.08,
-                alpha=0.8
-            )
-
-        ax.set_title(f"{litho} — {value_label} per stratigrafie")
-        ax.set_xlabel("stratigrafie")
-        ax.set_ylabel(value_label)
-
-        if use_log_y:
-            ax.set_yscale("log")
-
-        plt.xticks(rotation=30, ha="right")
-        plt.tight_layout()
-
-        # opslaan
-        out_png = path_figs / f"{filename_stub}_litho-{litho}.png"
-        plt.savefig(out_png, dpi=300)
-        plt.close()
 
 # maak figuren voor FF en surface conductivity
 plot_box_per_litho(df, value_col=ff_col,       value_label="formation factor (FF)", filename_stub="box_ff_strat")
@@ -452,3 +551,55 @@ plot_box_per_litho(df, value_col=surfcond_col, value_label="surface conductivity
 print(f"Boxplots opgeslagen in: {path_figs}")
 
 
+
+#%% calculate median values for 1) lithoclass and 2) stratlitho combinations, with option to manually merge certain stratigraphies within a lithoclass
+
+
+# median lithoclass
+median_litho_ff = df.groupby(litho_col)["log10_FF"].median()
+median_litho_ff  = (10**median_litho_ff).reset_index(name="median_ff_based_on_log_transformed_data")
+median_litho_surfcond = df.groupby(litho_col)["log10_surfcond"].median()
+median_litho_surfcond = (10**median_litho_surfcond).reset_index(name="median_surfcond_based_on_log_transformed_data")
+median_litho = pd.merge(median_litho_ff, median_litho_surfcond, on=litho_col)
+median_litho.to_csv(path_results / "median_ff_litho.csv", index=False)
+
+
+# -- median stratigraphy ---
+
+manual_groups = [
+    {"lithoklasse": "zg", "strats": ["AP", "PZ-WG"], "group": "AP+PZ-WG"},
+    {"lithoklasse": "kz", "strats": ["BX", "DRGI"], "group": "BX+DRGI"},
+    {"lithoklasse": "kz", "strats": ["AAOM", "NAWA"], "group": "AAOM+NAWA"},
+    {"lithoklasse": "zm", "strats": ["AAOM", "URVE"], "group": "AAOM+URVE"},
+    {"lithoklasse": "zm", "strats": ["NAWA", "NAWO", "NAZA", "OO"], "group": "NAWA+NAWO+NAZA+OO"},
+    {"lithoklasse": "zm", "strats": ["BX", "BXWI"], "group": "BX+BXWI"},
+]
+
+# create stratlitho_combos
+stratlitho_combos = results_litho_strat_df.loc[results_litho_strat_df["variable"]== "formation_factor"][["lithoklasse", "strats"]]
+
+medians_stratlitho = calc_stratlitho_medians(
+    df=df,
+    stratlitho_combos=stratlitho_combos,#.rename(columns={"lithoklasse": litho_col}) if "lithoklasse" in stratlitho_combos.columns else stratlitho_combos,
+    ff_col=ff_col,
+    surfcond_col=surfcond_col,
+    litho_col=litho_col,
+    strat_col=strat_col,
+    manual_groups=manual_groups
+).reset_index(drop=True)
+
+medians_stratlitho_no_groups = calc_stratlitho_medians(
+    df=df,
+    stratlitho_combos=stratlitho_combos,
+    ff_col=ff_col,
+    surfcond_col=surfcond_col,
+    litho_col=litho_col,
+    strat_col=strat_col,
+    manual_groups=None
+).reset_index(drop=True)
+
+# save
+medians_stratlitho[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_value", "median_log_surfcond_to_normal_value"]].to_csv(path_results / "median_stratlitho_manual_groups_short.csv", index=False)
+medians_stratlitho_no_groups[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_value", "median_log_surfcond_to_normal_value"]].to_csv(path_results / "median_stratlitho_no_groups_short.csv", index=False)
+medians_stratlitho.to_csv(path_results / "median_stratlitho_manual_groups.csv", index=False)
+medians_stratlitho_no_groups.to_csv(path_results / "median_stratlitho_no_groups.csv", index=False)
