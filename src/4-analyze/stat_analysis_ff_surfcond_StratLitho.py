@@ -1,6 +1,16 @@
 """
 Script to perform statistical analysis of the formation factor and surface conductivity, and to check for differences between lithoclasses, stratigraphy and stratlithoclasses.
 
+output of this script:
+1) Normal distribution test
+2) kruskal-wallis test for FF and ECs on lithoclass, stratigraphy and stratlithoclass
+3) kruskal-wallis test for FF and ECs on stratigraphy within each lithoclass
+4) Dunn post-hoc test with Bejamini-Hochberg correction for FF and ECs on lithoclass and stratigraphy
+5) Dunn post-hoc test with Bejamini-Hochberg correction for FF and ECs on stratigraphy within lithoclass
+6) Boxplots per lithoclass per stratigraphy for FF and ECs
+7) Median for FF and ECs per lithoclass and for stratigraphy within lithoclass based on post-hoc test grouping
+
+
 project: FRESHEM (11210255-005)
 author: Romee van Dam (Deltares)
 date: 15-04-26
@@ -531,20 +541,17 @@ for variable in ["formation_factor", "surface_cond"]:
         dunn_litho_strat_all_df = pd.concat(dunn_litho_strat_all, ignore_index=True)
         dunn_litho_strat_all_df.to_csv(path_results / "dunn_strat_all_litho.csv", index=False)
 
-#%% Boxplots per lithoklasse met stratigrafie op de x-as (los voor FF en surfcond)
+#%% Boxplots per lithoclass with stratigraphy on the x-as (separate figures for FF and surfcond)
 
-
-# outputmap voor figuren
 path_figs = path_results / "boxplots_litho_strat"
 path_figs.mkdir(exist_ok=True, parents=True)
 
-# instellingen
-min_n_per_strat_in_litho = 5   # pas aan als je wilt (bijv. 3 of 5)
-show_points = True             # puntjes (stripplot) aan/uit
-use_log_y = False              # optioneel: log-scale y-as
+# settings
+min_n_per_strat_in_litho = 5  
+show_points = True             
+use_log_y = False              
 
-
-# maak figuren voor FF en surface conductivity
+# make boxplots for FF and surface conductivity
 plot_box_per_litho(df, value_col=ff_col,       value_label="formation factor (FF)", filename_stub="box_ff_strat")
 plot_box_per_litho(df, value_col=surfcond_col, value_label="surface conductivity σₛ (S/m)", filename_stub="box_surfcond_strat")
 
