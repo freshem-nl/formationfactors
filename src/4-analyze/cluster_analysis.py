@@ -22,6 +22,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
+
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
@@ -109,7 +110,7 @@ else:
 if litho_col in df.columns and stratlitho_col in df.columns:
     missing_litho = df[litho_col].isna() | (df[litho_col].astype(str).str.strip() == "")
     if missing_litho.any():
-        print("Warning: missing lithoklasse -> afgeleid uit StratLithoklasse (laatste 2 chars).")
+        print("Warning: missing lithoklasse -> afgeleid uit StratLithoklasse (laatste 2 characters).")
         df.loc[missing_litho, litho_col] = (
             df.loc[missing_litho, stratlitho_col].astype(str).str[-2:] #TODO: works only for sandy classes.(only category where problem arises right now) 
         )
@@ -127,6 +128,14 @@ df = df.loc[
     & df[strat_col].notnull()
 ].copy()
 
+# do not take AAOM (anthropogenic) for analysis 
+df = df.loc[df["Stratigrafie"]!='AAOM'].copy()
+
+# remove  MG and WG suffixes
+df[strat_col] = df[strat_col].str.replace("-(MG|WG)", "", regex=True)
+df[stratlitho_col] = df[stratlitho_col].str.replace("-(MG|WG)", "", regex=True)
+
+
 # force numeric
 df[ff_col] = pd.to_numeric(df[ff_col], errors="coerce")
 df[surfcond_col] = pd.to_numeric(df[surfcond_col], errors="coerce")
@@ -142,6 +151,23 @@ if ((df[ff_col] <= 0) | (df[surfcond_col] <= 0)).any():
 
 # %% Figures 
 # Figure 1)  scatterplot FF and σs, color = lithoclass
+
+
+palette = {
+    "k":  "#2ca02c",   # green
+    "v":  "#d62728",   # red
+    
+    # sandy classes: light → dark
+    "zf": "#f3eaa3",   # very light yellow
+    "zm": "#eebd5a",   # yellow-orange
+    "zg": "#c26d0c",   # orange
+    "z":  "#7c5c04",   # dark orange
+    "kz": "#d3ff11",   # orange
+    
+    "sch": "#000000"   # black
+}
+hue_order = ["zf", "zm", "zg", "z","kz", "k", "v", "sch"]
+
 print( "create figures")
 
 sns.set_context("talk")
@@ -158,7 +184,8 @@ sns.scatterplot(
     x=x,
     y=y,
     hue=litho_col,
-    palette="tab20",
+    hue_order=hue_order,
+    palette=palette,
     alpha=0.85,
     edgecolor="none",
     ax=ax

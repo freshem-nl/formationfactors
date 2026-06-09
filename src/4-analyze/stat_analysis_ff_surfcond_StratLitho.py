@@ -68,12 +68,22 @@ if len(df.loc[~df[litho_col].notnull()])>0:
         df.loc[idx, litho_col] = df.loc[idx, stratlitho_col][-2:]
 
 # drop rows with missing values in any of the relevant columns
-if len(df.loc[~df[ff_col].notnull()])>0: #TODO: if SIP3 is missing, take SIP5
+if len(df.loc[~df[ff_col].notnull()])>0: #TODO: if SIP3 is missing, take SIP5?
     print("Warning: some samples have missing formation factors, these are removed from the analysis.\nConsider using SIP5_formation_factor_F_3W_unitless if SIP3 is missing.")
 df = df.loc[df[ff_col].notnull() & df[surfcond_col].notnull() & df[litho_col].notnull() & df[strat_col].notnull() & df[stratlitho_col].notnull()]
 
 df["log10_FF"] = np.log10(df[ff_col])
 df["log10_surfcond"] = np.log10(df[surfcond_col])
+
+# do not take AAOM (anthropogenic) for analysis 
+df = df.loc[df["Stratigrafie"]!='AAOM'].copy()
+
+# remove  MG and WG suffixes
+df[strat_col] = df[strat_col].str.replace("-(MG|WG)", "", regex=True)
+df[stratlitho_col] = df[stratlitho_col].str.replace("-(MG|WG)", "", regex=True)
+
+
+
 #%% definitions
 
 def collect_group_size(df, group_col):
@@ -574,10 +584,11 @@ median_litho.to_csv(path_results / "median_ff_litho.csv", index=False)
 # -- median stratigraphy ---
 
 manual_groups = [
-    {"lithoklasse": "zg", "strats": ["AP", "PZ-WG"], "group": "AP+PZ-WG"},
+    {"lithoklasse": "zg", "strats": ["AP", "PZ"], "group": "AP+PZ"},
     {"lithoklasse": "kz", "strats": ["BX", "DRGI"], "group": "BX+DRGI"},
-    {"lithoklasse": "kz", "strats": ["AAOM", "NAWA"], "group": "AAOM+NAWA"},
-    {"lithoklasse": "zm", "strats": ["AAOM", "URVE"], "group": "AAOM+URVE"},
+    {"lithoklasse": "kz", "strats": ["NAWA", "NAWO"], "group": "NAWA+NAWO"},
+    #{"lithoklasse": "kz", "strats": ["AAOM", "NAWA"], "group": "AAOM+NAWA"},
+    #{"lithoklasse": "zm", "strats": ["AAOM", "URVE"], "group": "AAOM+URVE"},
     {"lithoklasse": "zm", "strats": ["NAWA", "NAWO", "NAZA", "OO"], "group": "NAWA+NAWO+NAZA+OO"},
     {"lithoklasse": "zm", "strats": ["BX", "BXWI"], "group": "BX+BXWI"},
 ]
@@ -610,3 +621,4 @@ medians_stratlitho[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_va
 medians_stratlitho_no_groups[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_value", "median_log_surfcond_to_normal_value"]].to_csv(path_results / "median_stratlitho_no_groups_short.csv", index=False)
 medians_stratlitho.to_csv(path_results / "median_stratlitho_manual_groups.csv", index=False)
 medians_stratlitho_no_groups.to_csv(path_results / "median_stratlitho_no_groups.csv", index=False)
+#%%
