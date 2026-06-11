@@ -253,6 +253,7 @@ def calc_stratlitho_medians(
         rules_by_litho.setdefault(r["lithoklasse"], []).append(r)
 
     out_rows = []
+    out_rows_std = []
 
     for _, row in stratlitho_combos.iterrows():
         litho = row[litho_col] if litho_col in stratlitho_combos.columns else row["lithoklasse"]
@@ -293,9 +294,13 @@ def calc_stratlitho_medians(
                 "median_surfcond": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
-                "median_log_ff_based_on_log_transformed_data": 10 ** sub_log["log10_FF"].median(),
-                "median_surfcond_based_on_log_transformed_data": 10 ** sub_log["log10_surfcond"].median(),
-                "is_manual": True,
+                "median_log_ff_to_normal_space": 10 ** sub_log["log10_FF"].median(),
+                "median_log_surfcond_to_normal_space": 10 ** sub_log["log10_surfcond"].median(),
+                "std_ff_normal_space": sub[ff_col].std(),
+                "std_surfcond_normal_space": sub[surfcond_col].std(),
+                "iqr_ff_normal_space": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
+                "iqr_surfcond_normal_space": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "manual_grouping": True,
             })
 
             # remove these strats from the workingset
@@ -318,16 +323,20 @@ def calc_stratlitho_medians(
                 "median_surfcond": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
-                "median_log_ff_to_normal_value": 10 ** sub_log["log10_FF"].median(),
-                "median_log_surfcond_to_normal_value": 10 ** sub_log["log10_surfcond"].median(),
-                "is_manual": False,
+                "median_log_ff_to_normal_space": 10 ** sub_log["log10_FF"].median(),
+                "median_log_surfcond_to_normal_space": 10 ** sub_log["log10_surfcond"].median(),
+                "std_ff_normal_space": sub[ff_col].std(),
+                "std_surfcond_normal_space": sub[surfcond_col].std(),
+                "iqr_ff_normal_space": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
+                "iqr_surfcond_normal_space": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "manual_grouping": False,
             })
 
     result = pd.DataFrame(out_rows)
 
     # sort: litho, then non-manual first (optional), then name
     if not result.empty:
-        result = result.sort_values([litho_col, "is_manual", "strat_group"], ascending=[True, True, True])
+        result = result.sort_values([litho_col, "manual_grouping", "strat_group"], ascending=[True, True, True])
 
     return result
 
@@ -578,7 +587,7 @@ median_litho_ff  = (10**median_litho_ff).reset_index(name="median_ff_based_on_lo
 median_litho_surfcond = df.groupby(litho_col)["log10_surfcond"].median()
 median_litho_surfcond = (10**median_litho_surfcond).reset_index(name="median_surfcond_based_on_log_transformed_data")
 median_litho = pd.merge(median_litho_ff, median_litho_surfcond, on=litho_col)
-median_litho.to_csv(path_results / "median_ff_litho.csv", index=False)
+median_litho.to_csv(path_results / "median_litho.csv", index=False)
 
 
 # -- median stratigraphy ---
@@ -617,8 +626,22 @@ medians_stratlitho_no_groups = calc_stratlitho_medians(
 ).reset_index(drop=True)
 
 # save
-medians_stratlitho[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_value", "median_log_surfcond_to_normal_value"]].to_csv(path_results / "median_stratlitho_manual_groups_short.csv", index=False)
-medians_stratlitho_no_groups[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_value", "median_log_surfcond_to_normal_value"]].to_csv(path_results / "median_stratlitho_no_groups_short.csv", index=False)
-medians_stratlitho.to_csv(path_results / "median_stratlitho_manual_groups.csv", index=False)
-medians_stratlitho_no_groups.to_csv(path_results / "median_stratlitho_no_groups.csv", index=False)
-#%%
+medians_stratlitho[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_space", "median_log_surfcond_to_normal_space"]].to_csv(path_results / "median_stratlitho_manual_groups_short.csv", index=False)
+medians_stratlitho_no_groups[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_space", "median_log_surfcond_to_normal_space"]].to_csv(path_results / "median_stratlitho_no_groups_short.csv", index=False)
+medians_stratlitho.to_csv(path_results / "median_std_stratlitho_manual_groups.csv", index=False)
+medians_stratlitho_no_groups.to_csv(path_results / "median_std_stratlitho_no_groups.csv", index=False)
+
+#%% calculate standard deviations
+
+# median lithoclass
+std_litho_ff = df.groupby(litho_col)[ff_col].std().reset_index(name="std_ff_based_on_org_space_data")
+iqr_ff = (df.groupby(litho_col)[ff_col].quantile(0.75) - df.groupby(litho_col)[ff_col].quantile(0.25)).reset_index(name="interquartile_range_ff")
+std_litho_ff = pd.merge(std_litho_ff, iqr_ff, on=litho_col)
+
+
+std_litho_surfcond = df.groupby(litho_col)[surfcond_col].std().reset_index(name="std_surfcond_based_on_org_space_data")
+iqr_surfcond = (df.groupby(litho_col)[surfcond_col].quantile(0.75) - df.groupby(litho_col)[surfcond_col].quantile(0.25)).reset_index(name="interquartile_range_surfcond")
+std_litho_surfcond = pd.merge(std_litho_surfcond, iqr_surfcond, on=litho_col)
+
+std_litho = pd.merge(std_litho_ff, std_litho_surfcond, on=litho_col)
+std_litho.to_csv(path_results / "std_litho.csv", index=False)
