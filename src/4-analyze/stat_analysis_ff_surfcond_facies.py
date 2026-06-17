@@ -699,7 +699,7 @@ for variable in ["formation_factor", "surface_cond"]:
             results_dunn = pd.DataFrame(dunn_matrix_refined(df_litho, val_col = val_col, group_col=facies_col, p_adjust="fdr_bh"))
             results_dunn.insert(loc=0, column="variable", value=variable)
             results_dunn.insert(loc=1, column="lithoclass", value=litho)
-            results_dunn.to_csv(path_results / f"dunn_{var_short}_facies_within_{litho}.csv", index=False)
+            #results_dunn.to_csv(path_results / f"dunn_{var_short}_facies_within_{litho}.csv", index=False)
             # create multiple tables            
             dunn_litho_facies_var.append(results_dunn)
             dunn_litho_facies_all.append(results_dunn)
@@ -708,20 +708,20 @@ for variable in ["formation_factor", "surface_cond"]:
         if dunn_litho_facies_var:
             dunn_litho_facies_var_df = pd.concat(dunn_litho_facies_var, ignore_index=True)
             # only significant results
-            dunn_litho_facies_var_df_sig = dunn_litho_facies_var_df.loc[dunn_litho_facies_var_df["p_value"] < alpha]
+            #dunn_litho_facies_var_df_sig = dunn_litho_facies_var_df.loc[dunn_litho_facies_var_df["p_value"] < alpha]
             dunn_litho_facies_var_df_sig.sort_values("p_value", inplace=True)
             # save
-            dunn_litho_facies_var_df.to_csv(path_results / f"dunn_{var_short}_facies_all_litho.csv", index=False)
-            dunn_litho_facies_var_df_sig.to_csv(path_results / f"dunn_{var_short}_facies_litho_significant.csv", index=False)
+            dunn_litho_facies_var_df.to_csv(path_results / f"dunn_{var_short}_facies_within_litho.csv", index=False)
+            #dunn_litho_facies_var_df_sig.to_csv(path_results / f"dunn_{var_short}_facies_litho_significant.csv", index=False)
 
     # combine for both variables into one table
     if dunn_litho_facies_all:
         dunn_litho_facies_all_df = pd.concat(dunn_litho_facies_all, ignore_index=True)
-        dunn_litho_facies_all_df.to_csv(path_results / "dunn_facies_all_litho.csv", index=False)
+        dunn_litho_facies_all_df.to_csv(path_results / "dunn_facies_within_litho.csv", index=False)
 
 #%% Boxplots per lithoclass with facies on the x-as (separate figures for FF and surfcond)
 
-path_figs = path_results / "boxplots_litho_facies"
+path_figs = path_results / "boxplots_facies_within_litho"
 path_figs.mkdir(exist_ok=True, parents=True)
 
 # settings
@@ -824,7 +824,7 @@ for variable in ["formation_factor", "surface_cond"]:
             results_dunn = pd.DataFrame(dunn_matrix_refined(df_facies, val_col = val_col, group_col=litho_col, p_adjust="fdr_bh"))
             results_dunn.insert(loc=0, column="variable", value=variable)
             results_dunn.insert(loc=1, column="facies", value=facies)
-            results_dunn.to_csv(path_results / f"dunn_{var_short}_litho_within_{facies}.csv", index=False)
+            #results_dunn.to_csv(path_results / f"dunn_{var_short}_litho_within_{facies}.csv", index=False)
             # create multiple tables            
             dunn_facies_litho_var.append(results_dunn)
             dunn_facies_litho_all.append(results_dunn)
@@ -833,20 +833,20 @@ for variable in ["formation_factor", "surface_cond"]:
         if dunn_facies_litho_var:
             dunn_facies_litho_var_df = pd.concat(dunn_facies_litho_var, ignore_index=True)
             # only significant results
-            dunn_facies_litho_var_df_sig = dunn_facies_litho_var_df.loc[dunn_facies_litho_var_df["p_value"] < alpha]
+            #dunn_facies_litho_var_df_sig = dunn_facies_litho_var_df.loc[dunn_facies_litho_var_df["p_value"] < alpha]
             dunn_facies_litho_var_df_sig.sort_values("p_value", inplace=True)
             # save
-            dunn_facies_litho_var_df.to_csv(path_results / f"dunn_{var_short}_litho_all_facies.csv", index=False)
-            dunn_facies_litho_var_df_sig.to_csv(path_results / f"dunn_{var_short}_litho_all_facies_significant.csv", index=False)
+            dunn_facies_litho_var_df.to_csv(path_results / f"dunn_{var_short}_litho_within_facies.csv", index=False)
+            #dunn_facies_litho_var_df_sig.to_csv(path_results / f"dunn_{var_short}_litho_all_facies_significant.csv", index=False)
 
     # combine for both variables into one table
     if dunn_facies_litho_all:
         dunn_facies_litho_all_df = pd.concat(dunn_facies_litho_all, ignore_index=True)
-        dunn_facies_litho_all_df.to_csv(path_results / "dunn_litho_all_facies.csv", index=False)
+        dunn_facies_litho_all_df.to_csv(path_results / "dunn_litho_within_facies.csv", index=False)
 
 #%% Boxplots per lithoclass with facies on the x-as (separate figures for FF and surfcond)
 
-path_figs = path_results / "boxplots_facies_litho"
+path_figs = path_results / "boxplots_litho_within_facies"
 path_figs.mkdir(exist_ok=True, parents=True)
 
 # settings
