@@ -308,6 +308,8 @@ def calc_stratlitho_medians(
                 "std_log_surfcond": sub_log["log10_surfcond"].std(),
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
                 "manual_grouping": True,
             })
 
@@ -345,6 +347,8 @@ def calc_stratlitho_medians(
                 "std_log_surfcond": sub_log["log10_surfcond"].std(),
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
                 "manual_grouping": False,
             })
 
@@ -594,19 +598,37 @@ print(f"Boxplots opgeslagen in: {path_figs}")
 
 
 
-#%% calculate median values for 1) lithoclass and 2) stratlitho combinations, with option to manually merge certain stratigraphies within a lithoclass
+#%% calculate statistics for 1) lithoclass and 2) stratlitho combinations, with option to manually merge certain stratigraphies within a lithoclass
 
+# -- statistics lithoclass --
+agg_litho = (
+    df.groupby(litho_col)
+    .agg(
+        n=("log10_FF", "count"), 
 
-# median lithoclass
-median_litho_ff = df.groupby(litho_col)["log10_FF"].median()
-median_litho_ff  = (10**median_litho_ff).reset_index(name="median_log_ff_to_linear_scale")
-median_litho_surfcond = df.groupby(litho_col)["log10_surfcond"].median()
-median_litho_surfcond = (10**median_litho_surfcond).reset_index(name="median_log_surfcond_to_linear_scale")
-median_litho = pd.merge(median_litho_ff, median_litho_surfcond, on=litho_col)
-median_litho.to_csv(path_results / "median_litho.csv", index=False)
+        # log-scale statistics
+        median_log_ff=("log10_FF", "median"),
+        median_log_surfcond=("log10_surfcond", "median"),
+        mean_log_ff=("log10_FF", "mean"),
+        mean_log_surfcond=("log10_surfcond", "mean"),
+        std_log_ff=("log10_FF", "std"),
+        std_log_surfcond=("log10_surfcond", "std"),
+    )
+    .reset_index())
 
+cov_litho = []
+for litho in valid_litho:
+    df_litho = df.loc[df[litho_col]==litho].copy()
+    cov = df_litho[[ff_col, surfcond_col]].cov().values[0,1]
+    cov_litho.append({
+        litho_col: litho,
+        "cov_ff_surfcond": cov  
+    })
 
-# -- median stratigraphy ---
+litho_stats = pd.merge(agg_litho, pd.DataFrame(cov_litho), on=litho_col)
+litho_stats.to_csv(path_results/"statistics_litho.csv", index= False)
+
+# -- statistics stratigraphy ---
 
 manual_groups = [
     {"lithoklasse": "zg", "strats": ["AP", "PZ"], "group": "AP+PZ"},
@@ -642,8 +664,8 @@ medians_stratlitho_no_groups = calc_stratlitho_medians(
 ).reset_index(drop=True)
 
 # save
-medians_stratlitho[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]].to_csv(path_results / "median_mean_std_stratlitho_manual_groups_summary.csv", index=False)
-medians_stratlitho_no_groups[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]].to_csv(path_results / "median_mean_std_stratlitho_no_groups_summary.csv", index=False)
+medians_stratlitho[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond","cov_ff_surfcond"]].to_csv(path_results / "median_mean_std_stratlitho_manual_groups_summary.csv", index=False)
+medians_stratlitho_no_groups[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond","cov_ff_surfcond"]].to_csv(path_results / "median_mean_std_stratlitho_no_groups_summary.csv", index=False)
 medians_stratlitho.to_csv(path_results / "median_mean_std_stratlitho_manual_groups.csv", index=False)
 medians_stratlitho_no_groups.to_csv(path_results / "median_mean_std_stratlitho_no_groups.csv", index=False)
 

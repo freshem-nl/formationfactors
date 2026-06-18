@@ -372,6 +372,8 @@ def calc_lithofacies_medians(
                 "std_log_surfcond": sub_log["log10_surfcond"].std(),                
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
                 "manual_grouping": True,
             })
 
@@ -409,6 +411,8 @@ def calc_lithofacies_medians(
                 "std_log_surfcond": sub_log["log10_surfcond"].std(),
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
                 "manual_grouping": False,
             })
 
@@ -494,6 +498,8 @@ def calc_facieslitho_medians(
                 "std_log_surfcond": sub_log["log10_surfcond"].std(),
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
                 "manual_grouping": True,
             })
 
@@ -531,6 +537,8 @@ def calc_facieslitho_medians(
                 "std_log_surfcond": sub_log["log10_surfcond"].std(),
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
                 "manual_grouping": False,
             })
 
@@ -806,8 +814,8 @@ medians_lithofacies_no_groups = calc_lithofacies_medians(
 ).reset_index(drop=True)
 
 # save
-medians_lithofacies[["LITHOKLASSE_CD", "facies_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]].to_csv(path_results / "median_mean_std_lithofacies_manual_groups_summary.csv", index=False)
-medians_lithofacies_no_groups[["LITHOKLASSE_CD", "facies_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]].to_csv(path_results / "median_mean_std_lithofacies_no_groups_summary.csv", index=False)
+medians_lithofacies[["LITHOKLASSE_CD", "facies_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond","cov_ff_surfcond"]].to_csv(path_results / "median_mean_std_lithofacies_manual_groups_summary.csv", index=False)
+medians_lithofacies_no_groups[["LITHOKLASSE_CD", "facies_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond","cov_ff_surfcond"]].to_csv(path_results / "median_mean_std_lithofacies_no_groups_summary.csv", index=False)
 medians_lithofacies.to_csv(path_results / "median_mean_std_lithofacies_manual_groups.csv", index=False)
 medians_lithofacies_no_groups.to_csv(path_results / "median_mean_std_lithofacies_no_groups.csv", index=False)
 
@@ -930,9 +938,37 @@ medians_facieslitho_no_groups = calc_facieslitho_medians(
 ).reset_index(drop=True)
 
 # save
-medians_facieslitho[["facies", "litho_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]].to_csv(path_results / "median_mean_std_facieslitho_manual_groups_summary.csv", index=False)
-medians_facieslitho_no_groups[["facies", "litho_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]].to_csv(path_results / "median_mean_std_facieslitho_no_groups_summary.csv", index=False)
+medians_facieslitho[["facies", "litho_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond","cov_ff_surfcond"]].to_csv(path_results / "median_mean_std_facieslitho_manual_groups_summary.csv", index=False)
+medians_facieslitho_no_groups[["facies", "litho_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond","cov_ff_surfcond"]].to_csv(path_results / "median_mean_std_facieslitho_no_groups_summary.csv", index=False)
 medians_facieslitho.to_csv(path_results / "median_mean_std_facieslitho_manual_groups.csv", index=False)
 medians_facieslitho_no_groups.to_csv(path_results / "median_mean_std_facieslitho_no_groups.csv", index=False)
 
+#%% # calculate statistics for facies
+
+agg_facies = (
+    df.groupby(facies_col)
+    .agg(
+        n=("log10_FF", "count"), 
+
+        # log-scale statistics
+        median_log_ff=("log10_FF", "median"),
+        median_log_surfcond=("log10_surfcond", "median"),
+        mean_log_ff=("log10_FF", "mean"),
+        mean_log_surfcond=("log10_surfcond", "mean"),
+        std_log_ff=("log10_FF", "std"),
+        std_log_surfcond=("log10_surfcond", "std"),
+    )
+    .reset_index())
+
+cov_facies = []
+for facies in valid_facies:
+    df_facies = df.loc[df[facies_col]==facies].copy()
+    cov = df_facies[[ff_col, surfcond_col]].cov().values[0,1]
+    cov_facies.append({
+        facies_col: facies,
+        "cov_ff_surfcond": cov  
+    })
+
+facies_stats = pd.merge(agg_facies, pd.DataFrame(cov_facies), on=facies_col)
+facies_stats.to_csv(path_results/"statistics_facies.csv", index= False)
 #%%
