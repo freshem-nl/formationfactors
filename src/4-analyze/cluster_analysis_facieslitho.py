@@ -326,7 +326,7 @@ g.add_legend(
 
 g.set_axis_labels("Formation factor (FF)", "σs (S/m)")
 g.fig.suptitle(
-    f"FF vs σs — per lithoklasse (kleur = lithoklasse, n ≥ {min_group_size} per facies)",
+    f"FF vs σs — per facies (kleur = lithoklasse, n ≥ {min_group_size} per facies)",
     y=1.02
 )
 
