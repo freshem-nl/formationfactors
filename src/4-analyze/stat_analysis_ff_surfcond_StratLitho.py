@@ -294,12 +294,20 @@ def calc_stratlitho_medians(
                 "median_surfcond": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
-                "median_log_ff_to_normal_space": 10 ** sub_log["log10_FF"].median(),
-                "median_log_surfcond_to_normal_space": 10 ** sub_log["log10_surfcond"].median(),
-                "std_ff_normal_space": sub[ff_col].std(),
-                "std_surfcond_normal_space": sub[surfcond_col].std(),
-                "iqr_ff_normal_space": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
-                "iqr_surfcond_normal_space": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
+                "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
+                "mean_ff": sub[ff_col].mean(),
+                "mean_surfcond": sub[surfcond_col].mean(),
+                "mean_log_ff": sub_log["log10_FF"].mean(),
+                "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
+                "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
+                "mean_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].mean(),
+                "std_ff_linear_scale": sub[ff_col].std(),
+                "std_surfcond_linear_scale": sub[surfcond_col].std(),
+                "std_log_ff": sub_log["log10_FF"].std(),
+                "std_log_surfcond": sub_log["log10_surfcond"].std(),
+                "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
+                "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
                 "manual_grouping": True,
             })
 
@@ -323,12 +331,20 @@ def calc_stratlitho_medians(
                 "median_surfcond": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
-                "median_log_ff_to_normal_space": 10 ** sub_log["log10_FF"].median(),
-                "median_log_surfcond_to_normal_space": 10 ** sub_log["log10_surfcond"].median(),
-                "std_ff_normal_space": sub[ff_col].std(),
-                "std_surfcond_normal_space": sub[surfcond_col].std(),
-                "iqr_ff_normal_space": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
-                "iqr_surfcond_normal_space": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
+                "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
+                "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
+                "mean_ff": sub[ff_col].mean(),
+                "mean_surfcond": sub[surfcond_col].mean(),
+                "mean_log_ff": sub_log["log10_FF"].mean(),
+                "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
+                "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
+                "mean_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].mean(),
+                "std_ff_linear_scale": sub[ff_col].std(),
+                "std_surfcond_linear_scale": sub[surfcond_col].std(),
+                "std_log_ff": sub_log["log10_FF"].std(),
+                "std_log_surfcond": sub_log["log10_surfcond"].std(),
+                "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
+                "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
                 "manual_grouping": False,
             })
 
@@ -540,7 +556,7 @@ for variable in ["formation_factor", "surface_cond"]:
             results_dunn = pd.DataFrame(dunn_matrix_refined(df_litho, val_col = val_col, group_col=strat_col, p_adjust="fdr_bh"))
             results_dunn.insert(loc=0, column="variable", value=variable)
             results_dunn.insert(loc=1, column="lithoclass", value=litho)
-            results_dunn.to_csv(path_results / f"dunn_{var_short}_strat_within_{litho}.csv", index=False)
+            #results_dunn.to_csv(path_results / f"dunn_{var_short}_strat_within_{litho}.csv", index=False)
             # create multiple tables            
             dunn_litho_strat_var.append(results_dunn)
             dunn_litho_strat_all.append(results_dunn)
@@ -552,13 +568,13 @@ for variable in ["formation_factor", "surface_cond"]:
             dunn_litho_strat_var_df_sig = dunn_litho_strat_var_df.loc[dunn_litho_strat_var_df["p_value"] < alpha]
             dunn_litho_strat_var_df_sig.sort_values("p_value", inplace=True)
             # save
-            dunn_litho_strat_var_df.to_csv(path_results / f"dunn_{var_short}_strat_all_litho.csv", index=False)
-            dunn_litho_strat_var_df_sig.to_csv(path_results / f"dunn_{var_short}_strat_litho_significant.csv", index=False)
+            #dunn_litho_strat_var_df.to_csv(path_results / f"dunn_{var_short}_strat_all_litho.csv", index=False)
+            #dunn_litho_strat_var_df_sig.to_csv(path_results / f"dunn_{var_short}_strat_litho_significant.csv", index=False)
 
     # combine for both variables into one table
     if dunn_litho_strat_all:
         dunn_litho_strat_all_df = pd.concat(dunn_litho_strat_all, ignore_index=True)
-        dunn_litho_strat_all_df.to_csv(path_results / "dunn_strat_all_litho.csv", index=False)
+        dunn_litho_strat_all_df.to_csv(path_results / "dunn_ff_surfcond_strat_within_litho.csv", index=False)
 
 #%% Boxplots per lithoclass with stratigraphy on the x-as (separate figures for FF and surfcond)
 
@@ -583,9 +599,9 @@ print(f"Boxplots opgeslagen in: {path_figs}")
 
 # median lithoclass
 median_litho_ff = df.groupby(litho_col)["log10_FF"].median()
-median_litho_ff  = (10**median_litho_ff).reset_index(name="median_ff_based_on_log_transformed_data")
+median_litho_ff  = (10**median_litho_ff).reset_index(name="median_log_ff_to_linear_scale")
 median_litho_surfcond = df.groupby(litho_col)["log10_surfcond"].median()
-median_litho_surfcond = (10**median_litho_surfcond).reset_index(name="median_surfcond_based_on_log_transformed_data")
+median_litho_surfcond = (10**median_litho_surfcond).reset_index(name="median_log_surfcond_to_linear_scale")
 median_litho = pd.merge(median_litho_ff, median_litho_surfcond, on=litho_col)
 median_litho.to_csv(path_results / "median_litho.csv", index=False)
 
@@ -626,22 +642,23 @@ medians_stratlitho_no_groups = calc_stratlitho_medians(
 ).reset_index(drop=True)
 
 # save
-medians_stratlitho[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_space", "median_log_surfcond_to_normal_space"]].to_csv(path_results / "median_stratlitho_manual_groups_short.csv", index=False)
-medians_stratlitho_no_groups[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_normal_space", "median_log_surfcond_to_normal_space"]].to_csv(path_results / "median_stratlitho_no_groups_short.csv", index=False)
-medians_stratlitho.to_csv(path_results / "median_std_stratlitho_manual_groups.csv", index=False)
-medians_stratlitho_no_groups.to_csv(path_results / "median_std_stratlitho_no_groups.csv", index=False)
+medians_stratlitho[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]].to_csv(path_results / "median_mean_std_stratlitho_manual_groups_summary.csv", index=False)
+medians_stratlitho_no_groups[["LITHOKLASSE_CD", "strat_group", "median_log_ff_to_linear_scale", "median_log_surfcond_to_linear_scale","mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]].to_csv(path_results / "median_mean_std_stratlitho_no_groups_summary.csv", index=False)
+medians_stratlitho.to_csv(path_results / "median_mean_std_stratlitho_manual_groups.csv", index=False)
+medians_stratlitho_no_groups.to_csv(path_results / "median_mean_std_stratlitho_no_groups.csv", index=False)
 
 #%% calculate standard deviations
 
 # median lithoclass
-std_litho_ff = df.groupby(litho_col)[ff_col].std().reset_index(name="std_ff_based_on_org_space_data")
+std_litho_ff = df.groupby(litho_col)[ff_col].std().reset_index(name="std_ff_linear_scale")
 iqr_ff = (df.groupby(litho_col)[ff_col].quantile(0.75) - df.groupby(litho_col)[ff_col].quantile(0.25)).reset_index(name="interquartile_range_ff")
 std_litho_ff = pd.merge(std_litho_ff, iqr_ff, on=litho_col)
 
 
-std_litho_surfcond = df.groupby(litho_col)[surfcond_col].std().reset_index(name="std_surfcond_based_on_org_space_data")
+std_litho_surfcond = df.groupby(litho_col)[surfcond_col].std().reset_index(name="std_surfcond_linear_scale")
 iqr_surfcond = (df.groupby(litho_col)[surfcond_col].quantile(0.75) - df.groupby(litho_col)[surfcond_col].quantile(0.25)).reset_index(name="interquartile_range_surfcond")
 std_litho_surfcond = pd.merge(std_litho_surfcond, iqr_surfcond, on=litho_col)
 
 std_litho = pd.merge(std_litho_ff, std_litho_surfcond, on=litho_col)
 std_litho.to_csv(path_results / "std_litho.csv", index=False)
+#%%
