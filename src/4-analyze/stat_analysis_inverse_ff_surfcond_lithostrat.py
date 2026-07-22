@@ -647,6 +647,16 @@ manual_groups = [
 
 # create stratlitho_combos
 stratlitho_combos = results_litho_strat_df.loc[results_litho_strat_df["variable"]== "formation_factor"][["lithoklasse", "strats"]]
+# klasse met maar één group_members krijgt de waarde nan -> vul aan met bijbehorende strat uit results_litho_strat_df
+for row in stratlitho_combos.itertuples(index=False):
+    if not isinstance(row.strats, (list, tuple)) or len(row.strats) == 0:
+        group_sizes = results_litho_strat_df.loc[(results_litho_strat_df["variable"]== "formation_factor")&(results_litho_strat_df["lithoklasse"] == row.lithoklasse)]["group_sizes"]
+        if len(group_sizes.item()) == 1:
+            group_dict = group_sizes.item().keys()
+            group_member = [k for k in group_dict if k in valid_strat]
+            idx = stratlitho_combos.index[stratlitho_combos["lithoklasse"] == row.lithoklasse][0]
+            stratlitho_combos.at[idx, "group_members"] = group_member # opslaan als list anders pakt de functie calc_facieslitho_medians() hem niet
+        
 
 medians_stratlitho = calc_stratlitho_medians(
     df=df,

@@ -792,6 +792,16 @@ manual_groups = [
 
 # create litho-facies_combos
 lithofacies_combos = results_litho_facies_df.loc[results_litho_facies_df["variable"]== "formation_factor"][["lithoklasse", "group_members"]]
+# klasse met maar één group_members krijgt de waarde nan -> vul aan met bijbehorende lithoklasse uit results_facies_litho_df
+for row in lithofacies_combos.itertuples(index=False):
+    if not isinstance(row.group_members, (list, tuple)) or len(row.group_members) == 0:
+        group_sizes = results_litho_facies_df.loc[(results_litho_facies_df["variable"]== "formation_factor")&(results_litho_facies_df["lithoklasse"] == row.lithoklasse)]["group_sizes"]
+        if len(group_sizes.item()) == 1:
+            group_dict = group_sizes.item().keys()
+            group_member = [k for k in group_dict if k in valid_facies]
+            idx = lithofacies_combos.index[lithofacies_combos["lithoklasse"] == row.lithoklasse][0]
+            lithofacies_combos.at[idx, "group_members"] = group_member # opslaan als list anders pakt de functie calc_lithofacies_medians() hem niet
+
 
 medians_lithofacies = calc_lithofacies_medians(
     df=df,
@@ -916,6 +926,17 @@ manual_groups = [
 
 # create facies-litho_combos
 facieslitho_combos = results_facies_litho_df.loc[results_facies_litho_df["variable"]== "formation_factor"][["klasse", "group_members"]]
+# klasse met maar één group_members krijgt de waarde nan -> vul aan met bijbehorende lithoklasse uit results_facies_litho_df
+for row in facieslitho_combos.itertuples(index=False):
+    if not isinstance(row.group_members, (list, tuple)) or len(row.group_members) == 0:
+        group_sizes = results_facies_litho_df.loc[(results_facies_litho_df["variable"]== "formation_factor")&(results_facies_litho_df["klasse"] == row.klasse)]["group_sizes"]
+        if len(group_sizes.item()) == 1:
+            group_dict = group_sizes.item().keys()
+            group_member = [k for k in group_dict if k in valid_litho]
+            idx = facieslitho_combos.index[facieslitho_combos["klasse"] == row.klasse][0]
+            facieslitho_combos.at[idx, "group_members"] = group_member # opslaan als list anders pakt de functie calc_facieslitho_medians() hem niet
+ 
+
 
 medians_facieslitho = calc_facieslitho_medians(
     df=df,
