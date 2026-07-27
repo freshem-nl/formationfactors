@@ -37,10 +37,14 @@ path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
 path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results_facies")
+path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
 
 alpha = 0.1
 
 path_results.mkdir(exist_ok=True, parents=True)
+path_monte_carlo.mkdir(exist_ok=True, parents=True)
+
+
 #%% create dataframe with ff and ECs
 
 # read data
@@ -829,14 +833,9 @@ medians_lithofacies_no_groups[["LITHOKLASSE_CD", "facies_group", "median_log_ff_
 medians_lithofacies.to_csv(path_results / "median_mean_std_lithofacies_manual_groups.csv", index=False)
 medians_lithofacies_no_groups.to_csv(path_results / "median_mean_std_lithofacies_no_groups.csv", index=False)
 
-
-#%%
-
-
-
-
-
-
+# summary for monte carlo analyse
+lithofacies_for_monte_carlo = medians_lithofacies[["LITHOKLASSE_CD", "n","facies_group", "mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]]
+lithofacies_for_monte_carlo.to_csv(path_monte_carlo/ "lithofacies_for_monte_carlo.csv", index=False)
 
 
 
@@ -976,8 +975,8 @@ agg_facies = (
         median_log_surfcond=("log10_surfcond", "median"),
         mean_log_ff=("log10_FF", "mean"),
         mean_log_surfcond=("log10_surfcond", "mean"),
-        std_log_ff=("log10_FF", "std"),
-        std_log_surfcond=("log10_surfcond", "std"),
+        std_log_ff=("log10_FF", "std"), # std already for sample group (i.e. delta degree of freedom =1)
+        std_log_surfcond=("log10_surfcond", "std"), 
     )
     .reset_index())
 
@@ -992,4 +991,4 @@ for facies in valid_facies:
 
 facies_stats = pd.merge(agg_facies, pd.DataFrame(cov_facies), on=facies_col)
 facies_stats.to_csv(path_results/"statistics_facies.csv", index= False)
-#%%
+#%

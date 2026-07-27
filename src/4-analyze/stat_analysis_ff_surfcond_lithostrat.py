@@ -37,10 +37,12 @@ path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
 path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results")
+path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
 
 alpha = 0.1
 
 path_results.mkdir(exist_ok=True, parents=True)
+path_monte_carlo.mkdir(exist_ok=True, parents=True)
 #%% create dataframe with ff and ECs
 
 # read data
@@ -627,6 +629,33 @@ for litho in valid_litho:
 
 litho_stats = pd.merge(agg_litho, pd.DataFrame(cov_litho), on=litho_col)
 litho_stats.to_csv(path_results/"statistics_litho.csv", index= False)
+
+# summary for monte carlo
+litho_for_monte_carlo = litho_stats[[litho_col, "n", "mean_log_ff", "mean_log_surfcond", "std_log_ff", "std_log_surfcond"]] 
+litho_for_monte_carlo.to_csv(path_monte_carlo/"litho_for_monte_carlo.csv", index=False) 
+
+
+# big sand category for monte carlo analyse at locations with less detail
+sand_sub = df.loc[df[litho_col].isin(["z", "zf", "zm", "zg"])]
+sand_median_normal_scale_ff = sand_sub[ff_col].median()
+sand_mean_log_ff = sand_sub["log10_FF"].mean()
+sand_std_log_ff = sand_sub["log10_FF"].std()
+sand_median_normal_scale_surfcond = sand_sub[surfcond_col].median()
+sand_mean_log_surfcond = sand_sub["log10_surfcond"].mean()
+sand_std_log_surfcond = sand_sub["log10_surfcond"].std()
+n_sand = len(sand_sub)
+
+sand_clay_for_monte_carlo = litho_for_monte_carlo.loc[litho_for_monte_carlo[litho_col]== "k"].copy()
+sand_clay_for_monte_carlo.loc[len(sand_clay_for_monte_carlo)] = [
+                                "z",
+                                n_sand,
+                                sand_mean_log_ff,
+                                sand_mean_log_surfcond,
+                                sand_std_log_ff,
+                                sand_std_log_surfcond,
+                                ]
+
+sand_clay_for_monte_carlo.to_csv(path_monte_carlo/"sand_clay_for_monte_carlo.csv", index=False)
 
 # -- statistics stratigraphy ---
 
