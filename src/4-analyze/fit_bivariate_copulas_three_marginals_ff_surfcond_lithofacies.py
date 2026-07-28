@@ -20,8 +20,9 @@ Outputs:
 Benodigd:
     pixi add scipy pyvinecopulib openpyxl
 
-Project: FRESHEM
-Auteur: Romee van Dam / scriptvoorstel Copilot
+project: FRESHEM (11210255-005)
+author: Romee van Dam (Deltares), generated with copilot
+date: 28-07-26
 """
 #%%
 from __future__ import annotations
@@ -230,53 +231,6 @@ def flatten_parameters(cop: pv.Bicop) -> str:
 # =============================================================================
 # Data voorbereiden
 # =============================================================================
-
-
-# def read_and_prepare_data() -> pd.DataFrame:
-#     df_all = pd.read_excel(
-#         fn_labresults,
-#         keep_default_na=False,
-#         na_values=["", " ", "NULL", "NaN"],
-#     )
-
-#     df = df_all.loc[df_all["Type_name"] == "FF_Disturbed"].copy()
-
-#     missing_litho = ~df[litho_col].notna()
-#     if missing_litho.any():
-#         print("Warning: sommige samples missen lithoklasse; probeer waarde uit StratLithoklasse te halen.")
-#         for idx in df.loc[missing_litho].index:
-#             val = df.loc[idx, stratlitho_col]
-#             if pd.notna(val):
-#                 df.loc[idx, litho_col] = str(val)[-2:]
-
-#     df[ff_col] = pd.to_numeric(df[ff_col], errors="coerce")
-#     df[surfcond_col] = pd.to_numeric(df[surfcond_col], errors="coerce")
-
-#     df = df.loc[
-#         df[ff_col].notna()
-#         & df[surfcond_col].notna()
-#         & df[litho_col].notna()
-#         & df[strat_col].notna()
-#     ].copy()
-
-#     # voor lognormale optie zijn alleen positieve waarden bruikbaar;
-#     # omdat FF en sigma_s fysisch positief zijn, nemen we niet-positieve waarden niet mee.
-#     df = df.loc[(df[ff_col] > 0) & (df[surfcond_col] > 0)].copy()
-
-#     # anthropogeen niet meenemen, conform je bestaande analyse
-#     df = df.loc[df[strat_col] != "AAOM"].copy()
-
-#     # MG/WG suffix verwijderen
-#     df[strat_col] = df[strat_col].astype(str).str.replace("-(MGWG)", "", regex=True)
-#     df[stratlitho_col] = df[stratlitho_col].astype(str).str.replace("-(MGWG)", "", regex=True)
-
-#     df[facies_col] = df[strat_col].apply(assign_facies)
-#     df = df.loc[df[facies_col].notna()].copy()
-
-#     df["log10_FF"] = np.log10(df[ff_col])
-#     df["log10_surfcond"] = np.log10(df[surfcond_col])
-
-#     return df
 
 
 def add_lithofacies_group(df: pd.DataFrame, manual_groups: list[dict] | None) -> pd.DataFrame:
