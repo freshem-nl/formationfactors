@@ -2,18 +2,16 @@
 Script to perform statistical analysis of the formation factor and surface conductivity, and to check for differences between facies.
 
 output of this script:
-1) Normal distribution test
-2) kruskal-wallis test for FF and ECs on facies
-3) kruskal-wallis test for FF and ECs on facies within each lithoclass
-4) Dunn post-hoc test with Bejamini-Hochberg correction for FF and ECs on facies
-5) Dunn post-hoc test with Bejamini-Hochberg correction for FF and ECs on facies within lithoclass
-6) Boxplots per lithoclass per facies for FF and ECs
-7) Median for FF and ECs per lithoclass and for facies within lithoclass based on post-hoc test grouping
-
+1) Normal distribution test for FF and ECs
+2) kruskal-wallis test for FF and ECs on A) lithoclass and B) facies, C) facies within each lithoclass, D) lithoclass within facies
+3) Dunn post-hoc test with Bejamini-Hochberg correction for FF and ECs on A) lithoclass, B) facies, C) facies within lithoclass and D) lithoclass within facies
+4) Boxplots for FF and ECs for A) per lithoclass per facies, and B) facies per lithoclas
+5) stats (median, mean, std, cov) for FF and ECs per A) lithoclass, B) facies, C) facies within lithoclass, and D) lithoclass within facies based on post-hoc test grouping
+6) mean and std of log FF and ECs for A) facies within lithoclass and B) lithoclass within facies for monte carlo analysis
 
 project: FRESHEM (11210255-005)
 author: Romee van Dam (Deltares)
-date: 11-06-26
+date: 28-07-26
 """
 
 #%% imports
@@ -36,7 +34,7 @@ os.chdir(os.path.join(os.path.dirname(__file__), "..", ".."))
 path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
-path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results_facies")
+path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results_litho_and_facies_combos")
 path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
 
 alpha = 0.1
@@ -359,13 +357,13 @@ def calc_lithofacies_medians(
                 "members": members,
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
-                "median_surfcond": sub[surfcond_col].median(),
+                "median_surfcond_S/m": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
                 "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
                 "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
                 "mean_ff": sub[ff_col].mean(),
-                "mean_surfcond": sub[surfcond_col].mean(),
+                "mean_surfcond_S/m": sub[surfcond_col].mean(),
                 "mean_log_ff": sub_log["log10_FF"].mean(),
                 "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
                 "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
@@ -398,13 +396,13 @@ def calc_lithofacies_medians(
                 "members": [facies],
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
-                "median_surfcond": sub[surfcond_col].median(),
+                "median_surfcond_S/m": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
                 "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
                 "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
                 "mean_ff": sub[ff_col].mean(),
-                "mean_surfcond": sub[surfcond_col].mean(),
+                "mean_surfcond_S/m": sub[surfcond_col].mean(),
                 "mean_log_ff": sub_log["log10_FF"].mean(),
                 "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
                 "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
@@ -485,13 +483,13 @@ def calc_facieslitho_medians(
                 "members": members,
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
-                "median_surfcond": sub[surfcond_col].median(),
+                "median_surfcond_S/m": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
                 "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
                 "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
                 "mean_ff": sub[ff_col].mean(),
-                "mean_surfcond": sub[surfcond_col].mean(),
+                "mean_surfcond_S/m": sub[surfcond_col].mean(),
                 "mean_log_ff": sub_log["log10_FF"].mean(),
                 "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
                 "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
@@ -524,13 +522,13 @@ def calc_facieslitho_medians(
                 "members": [litho],
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
-                "median_surfcond": sub[surfcond_col].median(),
+                "median_surfcond_S/m": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
                 "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
                 "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
                 "mean_ff": sub[ff_col].mean(),
-                "mean_surfcond": sub[surfcond_col].mean(),
+                "mean_surfcond_S/m": sub[surfcond_col].mean(),
                 "mean_log_ff": sub_log["log10_FF"].mean(),
                 "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
                 "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
@@ -603,42 +601,121 @@ df[facies_col] = df[strat_col].apply(assign_facies)
 
 df = df.loc[df[facies_col].notnull()].copy() # omit samples with unknown facies
 
+
+
+
+# =============================================================================
+# normal distribution test 
+# =============================================================================
+#%% normal distribution test 
+for col in [ff_col, surfcond_col]:
+    if col == ff_col:
+        colname = "ff"
+    else: 
+        colname ="surf_cond"
+    
+    print(f"Testing normality for {colname}")
+    x = df[col]
+    if col == surfcond_col:
+        df_corrected = df.loc[df["Remarks"]!= "too slow σs_3W"].copy()
+        x = df_corrected[col]
+    x_log = np.log(x[x > 0])
+
+    #shapiro-wilk test
+
+    shapiro_raw = stats.shapiro(x)
+    shapiro_log = stats.shapiro(x_log)
+
+    print("Shapiro raw:", shapiro_raw)
+    print("Shapiro log:", shapiro_log)
+
+    # Q-Q plot
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+    stats.probplot(x, plot=axes[0])
+    axes[0].set_title("Q–Q plot (original scale)")
+
+    stats.probplot(x_log, plot=axes[1])
+    axes[1].set_title("Q–Q plot (log-transformed)")
+
+    plt.tight_layout()
+    plt.savefig(path_results / f"q-q_plot_{colname}.png")
+    plt.show()
+    plt.close()
+
+    # histogram
+
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+    sns.histplot(x, kde=True, ax=axes[0])
+    axes[0].set_title("Histogram original scale")
+
+    sns.histplot(x_log, kde=True, ax=axes[1])
+    axes[1].set_title("Histogram log-transformed")
+
+    plt.tight_layout()
+    plt.savefig(path_results / f"histogram_{colname}.png")
+    plt.show()
+    plt.close()
+
+
+
+# =============================================================================
+# Kruskal-Wallis tests
+# =============================================================================
 #%% Kruskal-Wallis test
 
-# results = []
+results = []
 
-# # - FF -
+# - FF -
 
-# # FF & facies
-# results.append({
-#     "variable": "formation_factor",
-#     "grouping": "facies",
-#     **kruskal_per_group(df, ff_col, facies_col)
-# })
+#FF & lithoclass
+results.append({
+    "variable": "formation_factor",
+    "grouping": "Lithoklasse",
+    **kruskal_per_group(df, ff_col, litho_col)
+})
 
-
-# # - surface conductivity -
-
-# # surface conductivity & facies
-# results.append({
-#     "variable": "surface_cond",
-#     "grouping": "facies",
-#     **kruskal_per_group(df, surfcond_col, facies_col)
-# })
+# FF & facies
+results.append({
+    "variable": "formation_factor",
+    "grouping": "facies",
+    **kruskal_per_group(df, ff_col, facies_col)
+})
 
 
-# # create df
-# results_df = pd.DataFrame(results)
+# - surface conductivity -
 
-# print(results_df[[
-#     "variable",
-#     "grouping",
-#     "H",
-#     "p_value",
-#     "n_groups"
-# ]])
+# surface conductivity & lithoclass
+results.append({
+    "variable": "surface_cond",
+    "grouping": "Lithoklasse",
+    **kruskal_per_group(df, surfcond_col, litho_col)
+})
 
-# results_df.to_csv(path_results / "kruskal_results_facies.csv", index=False)
+# surface conductivity & facies
+results.append({
+    "variable": "surface_cond",
+    "grouping": "facies",
+    **kruskal_per_group(df, surfcond_col, facies_col)
+})
+
+
+# create df
+results_df = pd.DataFrame(results)
+
+print(results_df[[
+    "variable",
+    "grouping",
+    "H",
+    "p_value",
+    "n_groups"
+]])
+
+results_df.to_csv(path_results / "kruskal_results_litho_and_facies.csv", index=False)
+
+
 #%% # filter for groups with >= 5 samples
 
 group_size_litho = collect_group_size(df, litho_col)
@@ -702,6 +779,81 @@ for facies in valid_facies:
 results_facies_litho_df = pd.DataFrame(results_facies_litho)
 results_facies_litho_df.to_csv(path_results / "kruskal_facies_litho_results.csv", index=False)
 
+# =============================================================================
+# A) Dunn's post-hoc test and stats for litho
+# =============================================================================
+
+#%% Dunn post-hoc test with Benjamini–Hochberg correction
+
+dunn_ff_litho = dunn_matrix_refined(df_litho_refined, val_col = ff_col, group_col=litho_col, p_adjust="fdr_bh")
+dunn_surfcond_litho = dunn_matrix_refined(df_litho_refined, val_col = surfcond_col, group_col=litho_col, p_adjust="fdr_bh")
+
+dunn_ff_litho.to_csv(path_results / "dunn_ff_litho.csv", index=False)
+dunn_surfcond_litho.to_csv(path_results / "dunn_surfcond_litho.csv", index=False)
+
+
+#%% calculate statistics for lithoclass
+
+# -- statistics lithoclass --
+agg_litho = (
+    df.groupby(litho_col)
+    .agg(
+        n=("log10_FF", "count"), 
+
+        # log-scale statistics
+        median_log_ff=("log10_FF", "median"),
+        median_log_surfcond=("log10_surfcond", "median"),
+        mean_log_ff=("log10_FF", "mean"),
+        mean_log_surfcond=("log10_surfcond", "mean"),
+        std_log_ff=("log10_FF", "std"),
+        std_log_surfcond=("log10_surfcond", "std"),
+    )
+    .reset_index())
+
+cov_litho = []
+for litho in valid_litho:
+    df_litho = df.loc[df[litho_col]==litho].copy()
+    cov = df_litho[[ff_col, surfcond_col]].cov().values[0,1]
+    cov_litho.append({
+        litho_col: litho,
+        "cov_ff_surfcond": cov  
+    })
+
+litho_stats = pd.merge(agg_litho, pd.DataFrame(cov_litho), on=litho_col)
+litho_stats.to_csv(path_results/"statistics_litho.csv", index= False)
+
+# summary for monte carlo
+litho_for_monte_carlo = litho_stats[[litho_col, "n", "mean_log_ff", "mean_log_surfcond", "std_log_ff", "std_log_surfcond"]] 
+litho_for_monte_carlo.to_csv(path_monte_carlo/"litho_for_monte_carlo.csv", index=False) 
+
+
+# big sand category for monte carlo analyse at locations with less detail
+sand_sub = df.loc[df[litho_col].isin(["z", "zf", "zm", "zg"])]
+sand_median_normal_scale_ff = sand_sub[ff_col].median()
+sand_mean_log_ff = sand_sub["log10_FF"].mean()
+sand_std_log_ff = sand_sub["log10_FF"].std()
+sand_median_normal_scale_surfcond = sand_sub[surfcond_col].median()
+sand_mean_log_surfcond = sand_sub["log10_surfcond"].mean()
+sand_std_log_surfcond = sand_sub["log10_surfcond"].std()
+n_sand = len(sand_sub)
+
+sand_clay_for_monte_carlo = litho_for_monte_carlo.loc[litho_for_monte_carlo[litho_col]== "k"].copy()
+sand_clay_for_monte_carlo.loc[len(sand_clay_for_monte_carlo)] = [
+                                "z",
+                                n_sand,
+                                sand_mean_log_ff,
+                                sand_mean_log_surfcond,
+                                sand_std_log_ff,
+                                sand_std_log_surfcond,
+                                ]
+
+sand_clay_for_monte_carlo.to_csv(path_monte_carlo/"sand_clay_for_monte_carlo.csv", index=False)
+
+
+
+# =============================================================================
+# B) Dunn's post-hoc test and stats for facies
+# =============================================================================
 
 
 #%% Dunn post-hoc test with Benjamini–Hochberg correction
@@ -712,6 +864,39 @@ dunn_surfcond_facies = dunn_matrix_refined(df_facies_refined, val_col = surfcond
 dunn_ff_facies.to_csv(path_results / "dunn_ff_facies.csv", index=False)
 dunn_surfcond_facies.to_csv(path_results / "dunn_surfcond_facies.csv", index=False)
 
+
+#%% # calculate statistics for facies
+
+agg_facies = (
+    df.groupby(facies_col)
+    .agg(
+        n=("log10_FF", "count"), 
+
+        # log-scale statistics
+        median_log_ff=("log10_FF", "median"),
+        median_log_surfcond=("log10_surfcond", "median"),
+        mean_log_ff=("log10_FF", "mean"),
+        mean_log_surfcond=("log10_surfcond", "mean"),
+        std_log_ff=("log10_FF", "std"), # std already for sample group (i.e. delta degree of freedom =1)
+        std_log_surfcond=("log10_surfcond", "std"), 
+    )
+    .reset_index())
+
+cov_facies = []
+for facies in valid_facies:
+    df_facies = df.loc[df[facies_col]==facies].copy()
+    cov = df_facies[[ff_col, surfcond_col]].cov().values[0,1]
+    cov_facies.append({
+        facies_col: facies,
+        "cov_ff_surfcond": cov  
+    })
+
+facies_stats = pd.merge(agg_facies, pd.DataFrame(cov_facies), on=facies_col)
+facies_stats.to_csv(path_results/"statistics_facies.csv", index= False)
+
+# =============================================================================
+# C) Dunn's post-hoc test and stats for facies within each lithoclass
+# =============================================================================
 #%% Dunn post-hoc test with Benjamini–Hochberg correction for facies within each lithoclass
 dunn_litho_facies_all = []
 
@@ -840,7 +1025,9 @@ lithofacies_for_monte_carlo.to_csv(path_monte_carlo/ "lithofacies_for_monte_carl
 
 
 
-
+# =============================================================================
+# D) Dunn's post-hoc test and stats for lithoclass within each facies
+# =============================================================================
 
 #%% Dunn post-hoc test with Benjamini–Hochberg correction for lithoclass within each facies
 dunn_facies_litho_all = []
@@ -963,32 +1150,4 @@ medians_facieslitho_no_groups[["facies", "litho_group", "median_log_ff_to_linear
 medians_facieslitho.to_csv(path_results / "median_mean_std_facieslitho_manual_groups.csv", index=False)
 medians_facieslitho_no_groups.to_csv(path_results / "median_mean_std_facieslitho_no_groups.csv", index=False)
 
-#%% # calculate statistics for facies
-
-agg_facies = (
-    df.groupby(facies_col)
-    .agg(
-        n=("log10_FF", "count"), 
-
-        # log-scale statistics
-        median_log_ff=("log10_FF", "median"),
-        median_log_surfcond=("log10_surfcond", "median"),
-        mean_log_ff=("log10_FF", "mean"),
-        mean_log_surfcond=("log10_surfcond", "mean"),
-        std_log_ff=("log10_FF", "std"), # std already for sample group (i.e. delta degree of freedom =1)
-        std_log_surfcond=("log10_surfcond", "std"), 
-    )
-    .reset_index())
-
-cov_facies = []
-for facies in valid_facies:
-    df_facies = df.loc[df[facies_col]==facies].copy()
-    cov = df_facies[[ff_col, surfcond_col]].cov().values[0,1]
-    cov_facies.append({
-        facies_col: facies,
-        "cov_ff_surfcond": cov  
-    })
-
-facies_stats = pd.merge(agg_facies, pd.DataFrame(cov_facies), on=facies_col)
-facies_stats.to_csv(path_results/"statistics_facies.csv", index= False)
-#%
+#%%
