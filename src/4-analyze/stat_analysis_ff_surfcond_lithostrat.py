@@ -13,7 +13,7 @@ output of this script:
 
 project: FRESHEM (11210255-005)
 author: Romee van Dam (Deltares)
-date: 15-04-26
+date: 28-07-26
 """
 
 #%% imports
@@ -36,7 +36,7 @@ os.chdir(os.path.join(os.path.dirname(__file__), "..", ".."))
 path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
-path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results")
+path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results_lithostrat")
 path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
 
 alpha = 0.1
@@ -293,13 +293,13 @@ def calc_stratlitho_medians(
                 "members": members,
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
-                "median_surfcond": sub[surfcond_col].median(),
+                "median_surfcond_S/m": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
                 "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
                 "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
                 "mean_ff": sub[ff_col].mean(),
-                "mean_surfcond": sub[surfcond_col].mean(),
+                "mean_surfcond_S/m": sub[surfcond_col].mean(),
                 "mean_log_ff": sub_log["log10_FF"].mean(),
                 "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
                 "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
@@ -332,13 +332,13 @@ def calc_stratlitho_medians(
                 "members": [strat],
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
-                "median_surfcond": sub[surfcond_col].median(),
+                "median_surfcond_S/m": sub[surfcond_col].median(),
                 "median_log_ff": sub_log["log10_FF"].median(),
                 "median_log_surfcond": sub_log["log10_surfcond"].median(),
                 "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
                 "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
                 "mean_ff": sub[ff_col].mean(),
-                "mean_surfcond": sub[surfcond_col].mean(),
+                "mean_surfcond_S/m": sub[surfcond_col].mean(),
                 "mean_log_ff": sub_log["log10_FF"].mean(),
                 "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
                 "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
@@ -373,6 +373,9 @@ for col in [ff_col, surfcond_col]:
     
     print(f"Testing normality for {colname}")
     x = df[col]
+    if col == surfcond_col:
+        df_corrected = df.loc[df["Remarks"]!= "too slow σs_3W"].copy()
+        x = df_corrected[col]
     x_log = np.log(x[x > 0])
 
     #shapiro-wilk test
@@ -600,62 +603,62 @@ print(f"Boxplots opgeslagen in: {path_figs}")
 
 
 
-#%% calculate statistics for 1) lithoclass and 2) stratlitho combinations, with option to manually merge certain stratigraphies within a lithoclass
+# #%% calculate statistics for 1) lithoclass and 2) stratlitho combinations, with option to manually merge certain stratigraphies within a lithoclass
 
-# -- statistics lithoclass --
-agg_litho = (
-    df.groupby(litho_col)
-    .agg(
-        n=("log10_FF", "count"), 
+# # -- statistics lithoclass --
+# agg_litho = (
+#     df.groupby(litho_col)
+#     .agg(
+#         n=("log10_FF", "count"), 
 
-        # log-scale statistics
-        median_log_ff=("log10_FF", "median"),
-        median_log_surfcond=("log10_surfcond", "median"),
-        mean_log_ff=("log10_FF", "mean"),
-        mean_log_surfcond=("log10_surfcond", "mean"),
-        std_log_ff=("log10_FF", "std"),
-        std_log_surfcond=("log10_surfcond", "std"),
-    )
-    .reset_index())
+#         # log-scale statistics
+#         median_log_ff=("log10_FF", "median"),
+#         median_log_surfcond=("log10_surfcond", "median"),
+#         mean_log_ff=("log10_FF", "mean"),
+#         mean_log_surfcond=("log10_surfcond", "mean"),
+#         std_log_ff=("log10_FF", "std"),
+#         std_log_surfcond=("log10_surfcond", "std"),
+#     )
+#     .reset_index())
 
-cov_litho = []
-for litho in valid_litho:
-    df_litho = df.loc[df[litho_col]==litho].copy()
-    cov = df_litho[[ff_col, surfcond_col]].cov().values[0,1]
-    cov_litho.append({
-        litho_col: litho,
-        "cov_ff_surfcond": cov  
-    })
+# cov_litho = []
+# for litho in valid_litho:
+#     df_litho = df.loc[df[litho_col]==litho].copy()
+#     cov = df_litho[[ff_col, surfcond_col]].cov().values[0,1]
+#     cov_litho.append({
+#         litho_col: litho,
+#         "cov_ff_surfcond": cov  
+#     })
 
-litho_stats = pd.merge(agg_litho, pd.DataFrame(cov_litho), on=litho_col)
-litho_stats.to_csv(path_results/"statistics_litho.csv", index= False)
+# litho_stats = pd.merge(agg_litho, pd.DataFrame(cov_litho), on=litho_col)
+# litho_stats.to_csv(path_results/"statistics_litho.csv", index= False)
 
-# summary for monte carlo
-litho_for_monte_carlo = litho_stats[[litho_col, "n", "mean_log_ff", "mean_log_surfcond", "std_log_ff", "std_log_surfcond"]] 
-litho_for_monte_carlo.to_csv(path_monte_carlo/"litho_for_monte_carlo.csv", index=False) 
+# # summary for monte carlo
+# litho_for_monte_carlo = litho_stats[[litho_col, "n", "mean_log_ff", "mean_log_surfcond", "std_log_ff", "std_log_surfcond"]] 
+# litho_for_monte_carlo.to_csv(path_monte_carlo/"litho_for_monte_carlo.csv", index=False) 
 
 
-# big sand category for monte carlo analyse at locations with less detail
-sand_sub = df.loc[df[litho_col].isin(["z", "zf", "zm", "zg"])]
-sand_median_normal_scale_ff = sand_sub[ff_col].median()
-sand_mean_log_ff = sand_sub["log10_FF"].mean()
-sand_std_log_ff = sand_sub["log10_FF"].std()
-sand_median_normal_scale_surfcond = sand_sub[surfcond_col].median()
-sand_mean_log_surfcond = sand_sub["log10_surfcond"].mean()
-sand_std_log_surfcond = sand_sub["log10_surfcond"].std()
-n_sand = len(sand_sub)
+# # big sand category for monte carlo analyse at locations with less detail
+# sand_sub = df.loc[df[litho_col].isin(["z", "zf", "zm", "zg"])]
+# sand_median_normal_scale_ff = sand_sub[ff_col].median()
+# sand_mean_log_ff = sand_sub["log10_FF"].mean()
+# sand_std_log_ff = sand_sub["log10_FF"].std()
+# sand_median_normal_scale_surfcond = sand_sub[surfcond_col].median()
+# sand_mean_log_surfcond = sand_sub["log10_surfcond"].mean()
+# sand_std_log_surfcond = sand_sub["log10_surfcond"].std()
+# n_sand = len(sand_sub)
 
-sand_clay_for_monte_carlo = litho_for_monte_carlo.loc[litho_for_monte_carlo[litho_col]== "k"].copy()
-sand_clay_for_monte_carlo.loc[len(sand_clay_for_monte_carlo)] = [
-                                "z",
-                                n_sand,
-                                sand_mean_log_ff,
-                                sand_mean_log_surfcond,
-                                sand_std_log_ff,
-                                sand_std_log_surfcond,
-                                ]
+# sand_clay_for_monte_carlo = litho_for_monte_carlo.loc[litho_for_monte_carlo[litho_col]== "k"].copy()
+# sand_clay_for_monte_carlo.loc[len(sand_clay_for_monte_carlo)] = [
+#                                 "z",
+#                                 n_sand,
+#                                 sand_mean_log_ff,
+#                                 sand_mean_log_surfcond,
+#                                 sand_std_log_ff,
+#                                 sand_std_log_surfcond,
+#                                 ]
 
-sand_clay_for_monte_carlo.to_csv(path_monte_carlo/"sand_clay_for_monte_carlo.csv", index=False)
+# sand_clay_for_monte_carlo.to_csv(path_monte_carlo/"sand_clay_for_monte_carlo.csv", index=False)
 
 # -- statistics stratigraphy ---
 
