@@ -14,7 +14,8 @@ author: Romee van Dam (Deltares)
 date: 28-07-26
 """
 
-#%% imports
+#%% 
+# imports
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -27,10 +28,13 @@ import scikit_posthocs as sp
 import seaborn as sns
 import numpy as np
 
-#%% paths and parameters
+#%% 
+# paths and parameters
+
 # run from basedir, assuming script resides in subdir of src/
 os.chdir(os.path.join(os.path.dirname(__file__), "..", ".."))
 
+path_input = Path("data/3-input")
 path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
@@ -43,7 +47,8 @@ path_results.mkdir(exist_ok=True, parents=True)
 path_monte_carlo.mkdir(exist_ok=True, parents=True)
 
 
-#%% create dataframe with ff and ECs
+#%% 
+# create dataframe with ff and ECs
 
 # read data
 df_all = pd.read_excel(fn_labresults, 
@@ -87,7 +92,8 @@ df[stratlitho_col] = df[stratlitho_col].str.replace("-(MG|WG)", "", regex=True)
 
 
 
-#%% definitions
+#%% 
+# definitions
 
 def collect_group_size(df, group_col):
     """Return a dict with group sizes for each category in group_col."""
@@ -552,7 +558,8 @@ def calc_facieslitho_medians(
 
     return result
 
-#%% prepare facies groups
+#%% 
+# prepare facies groups
 
 facies_list = ['marien' , 'fluviatiel', 'glaciaal', 'eolisch', 'organisch', 'rest']
 
@@ -568,6 +575,14 @@ organisch_codes = ['NIHO', 'NIBA', 'NI']
 
 rest_codes = ['AAOM'] #TODO: 'NA'?
 
+codes_per_facies = {
+    "marien": marien_codes,
+    "fluviatiel": fluviatiel_codes,
+    "glaciaal": glaciaal_codes,
+    "eolisch": eolisch_codes,
+    "organisch": organisch_codes,
+    "rest": rest_codes,
+}
 
 facies_map = {}
 for code in marien_codes:
@@ -601,13 +616,15 @@ df[facies_col] = df[strat_col].apply(assign_facies)
 
 df = df.loc[df[facies_col].notnull()].copy() # omit samples with unknown facies
 
+df.to_csv(f"{path_input}/20260304_tbl20_WPchloride_FFdata_with_facies.csv", index=False)
 
 
 
 # =============================================================================
 # normal distribution test 
 # =============================================================================
-#%% normal distribution test 
+#%% 
+# normal distribution test 
 for col in [ff_col, surfcond_col]:
     if col == ff_col:
         colname = "ff"
@@ -664,7 +681,8 @@ for col in [ff_col, surfcond_col]:
 # =============================================================================
 # Kruskal-Wallis tests
 # =============================================================================
-#%% Kruskal-Wallis test
+#%% 
+# Kruskal-Wallis test
 
 results = []
 
@@ -716,20 +734,27 @@ print(results_df[[
 results_df.to_csv(path_results / "kruskal_results_litho_and_facies.csv", index=False)
 
 
-#%% # filter for groups with >= 5 samples
+#%% 
+# # filter for groups with >= 5 samples
 
 group_size_litho = collect_group_size(df, litho_col)
 group_size_facies = collect_group_size(df, facies_col)
-
+group_size_strat = collect_group_size(df, strat_col)
+group_size_stratlitho = collect_group_size(df, stratlitho_col)
 
 valid_litho = {k for k, v in group_size_litho.items() if v >= 5}
 valid_facies = {k for k, v in group_size_facies.items() if v >= 5}
+valid_strat = {k for k, v in group_size_strat.items() if v >= 5}
+valid_stratlitho = {k for k, v in group_size_stratlitho.items() if v >= 5}
 
 
 df_litho_refined = df[df[litho_col].isin(valid_litho)].copy()
 df_facies_refined = df[df[facies_col].isin(valid_facies)].copy()
+df_strat_refined = df[df[strat_col].isin(valid_strat)].copy()
+df_stratlitho_refined = df[df[stratlitho_col].isin(valid_stratlitho)].copy()
 
-#%% kruskal-wallis test for facies within each lithoclass
+#%% 
+# kruskal-wallis test for facies within each lithoclass
 results_litho_facies = []
 for litho in valid_litho:
     print(f"Testing facies within lithoclass {litho}")
@@ -754,7 +779,8 @@ for litho in valid_litho:
 results_litho_facies_df = pd.DataFrame(results_litho_facies)
 results_litho_facies_df.to_csv(path_results / "kruskal_litho_facies_results.csv", index=False)
 
-#%% kruskal-wallis test for lithoclass within each facies
+#%% 
+# kruskal-wallis test for lithoclass within each facies
 results_facies_litho = []
 for facies in valid_facies:
     print(f"Testing lithoclass within facies {facies}")
@@ -783,7 +809,8 @@ results_facies_litho_df.to_csv(path_results / "kruskal_facies_litho_results.csv"
 # A) Dunn's post-hoc test and stats for litho
 # =============================================================================
 
-#%% Dunn post-hoc test with Benjamini–Hochberg correction
+#%% 
+# Dunn post-hoc test with Benjamini–Hochberg correction
 
 dunn_ff_litho = dunn_matrix_refined(df_litho_refined, val_col = ff_col, group_col=litho_col, p_adjust="fdr_bh")
 dunn_surfcond_litho = dunn_matrix_refined(df_litho_refined, val_col = surfcond_col, group_col=litho_col, p_adjust="fdr_bh")
@@ -792,7 +819,8 @@ dunn_ff_litho.to_csv(path_results / "dunn_ff_litho.csv", index=False)
 dunn_surfcond_litho.to_csv(path_results / "dunn_surfcond_litho.csv", index=False)
 
 
-#%% calculate statistics for lithoclass
+#%% 
+# calculate statistics for lithoclass
 
 # -- statistics lithoclass --
 agg_litho = (
@@ -856,7 +884,8 @@ sand_clay_for_monte_carlo.to_csv(path_monte_carlo/"sand_clay_for_monte_carlo.csv
 # =============================================================================
 
 
-#%% Dunn post-hoc test with Benjamini–Hochberg correction
+#%% 
+# Dunn post-hoc test with Benjamini–Hochberg correction
 
 dunn_ff_facies = dunn_matrix_refined(df_facies_refined, val_col = ff_col, group_col=facies_col, p_adjust="fdr_bh")
 dunn_surfcond_facies = dunn_matrix_refined(df_facies_refined, val_col = surfcond_col, group_col=facies_col, p_adjust="fdr_bh")
@@ -897,7 +926,8 @@ facies_stats.to_csv(path_results/"statistics_facies.csv", index= False)
 # =============================================================================
 # C) Dunn's post-hoc test and stats for facies within each lithoclass
 # =============================================================================
-#%% Dunn post-hoc test with Benjamini–Hochberg correction for facies within each lithoclass
+#%% 
+# Dunn post-hoc test with Benjamini–Hochberg correction for facies within each lithoclass
 dunn_litho_facies_all = []
 
 for variable in ["formation_factor", "surface_cond"]:
@@ -948,7 +978,8 @@ for variable in ["formation_factor", "surface_cond"]:
         dunn_litho_facies_all_df = pd.concat(dunn_litho_facies_all, ignore_index=True)
         dunn_litho_facies_all_df.to_csv(path_results / "dunn_ff_surfcond_facies_within_litho.csv", index=False)
 
-#%% Boxplots per lithoclass with facies on the x-as (separate figures for FF and surfcond)
+#%% 
+# Boxplots per lithoclass with facies on the x-as (separate figures for FF and surfcond)
 
 path_figs = path_results / "boxplots_facies_within_litho"
 path_figs.mkdir(exist_ok=True, parents=True)
@@ -966,7 +997,8 @@ print(f"Boxplots opgeslagen in: {path_figs}")
 
 
 
-#%% calculate median values for litho-facies combinations, with option to manually merge certain facies within a lithoclass
+#%% 
+# calculate median values for litho-facies combinations, with option to manually merge certain facies within a lithoclass
 
 # -- median facies ---
 
@@ -1022,14 +1054,56 @@ medians_lithofacies_no_groups.to_csv(path_results / "median_mean_std_lithofacies
 lithofacies_for_monte_carlo = medians_lithofacies[["LITHOKLASSE_CD", "n","facies_group", "mean_log_ff","mean_log_surfcond","std_log_ff","std_log_surfcond"]]
 lithofacies_for_monte_carlo.to_csv(path_monte_carlo/ "lithofacies_for_monte_carlo.csv", index=False)
 
+#%%
+# # extended table for monte carlo analyse with stratigraphy codes
 
+# rows = []
+
+# for _, row in lithofacies_for_monte_carlo.iterrows():
+
+#     litho = row["LITHOKLASSE_CD"]
+#     facies_members = row["facies_group"].split("+")
+
+#     # alle mogelijke stratcodes behorend bij deze faciesgroep
+#     possible_codes = []
+
+#     for facies in facies_members:
+#         possible_codes.extend(codes_per_facies[facies])
+
+#     # alleen stratcodes die daadwerkelijk voorkomen in deze lithoklasse
+#     present_codes = (
+#         df.loc[
+#             (df[litho_col] == litho)
+#             & (df[strat_col].isin(possible_codes)),
+#             strat_col,
+#         ].dropna().unique())
+
+#     for strat_code in present_codes:
+#         rows.append({
+#             "LITHOKLASSE_CD": litho,
+#             "facies_group": row["facies_group"],
+#             "strat_code": f"{strat_code}", #TODO: NU voorzetten?
+#             "n": row["n"],
+#             "mean_log_ff": row["mean_log_ff"],
+#             "mean_log_surfcond": row["mean_log_surfcond"],
+#             "std_log_ff": row["std_log_ff"],
+#             "std_log_surfcond": row["std_log_surfcond"],
+#         })
+
+# strat_for_monte_carlo = pd.DataFrame(rows)
+
+# strat_for_monte_carlo.to_csv(
+#     path_monte_carlo / "lithofacies_for_monte_carlo_with_stratigrafie.csv",
+#     index=False,
+# )
 
 
 # =============================================================================
 # D) Dunn's post-hoc test and stats for lithoclass within each facies
 # =============================================================================
 
-#%% Dunn post-hoc test with Benjamini–Hochberg correction for lithoclass within each facies
+#%% 
+# Dunn post-hoc test with Benjamini–Hochberg correction for lithoclass within each facies
 dunn_facies_litho_all = []
 
 for variable in ["formation_factor", "surface_cond"]:
@@ -1080,7 +1154,8 @@ for variable in ["formation_factor", "surface_cond"]:
         dunn_facies_litho_all_df = pd.concat(dunn_facies_litho_all, ignore_index=True)
         dunn_facies_litho_all_df.to_csv(path_results / "dunn_ff_surfcond_litho_within_facies.csv", index=False)
 
-#%% Boxplots per lithoclass with facies on the x-as (separate figures for FF and surfcond)
+#%% 
+# Boxplots per lithoclass with facies on the x-as (separate figures for FF and surfcond)
 
 path_figs = path_results / "boxplots_litho_within_facies"
 path_figs.mkdir(exist_ok=True, parents=True)
@@ -1098,7 +1173,8 @@ print(f"Boxplots opgeslagen in: {path_figs}")
 
 
 
-#%% calculate median values for facies-litho combinations, with option to manually merge certain litho within a facies
+#%% 
+# calculate median values for facies-litho combinations, with option to manually merge certain litho within a facies
 
 # # -- median facies ---
 

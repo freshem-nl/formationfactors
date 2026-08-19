@@ -2,25 +2,19 @@
 This script creates the look-up table with values and distribution of the formation factor and surface conductivity for the monte carlo analysis to perform statistical analysis of the formation factor and surface conductivity, and to check for differences between facies.
 
 output of this script:
-1) look-up table with lithoklasse, stratigraphy, facies, and mean, std, and distribution of FF and ECs 
+1) look-up table with stratigraphy, lithoklasse, facies, and mean, std, and distribution of FF and ECs 
 
 project: FRESHEM (11210255-005)
 author: Romee van Dam (Deltares)
-date: 17-08-26
+date: 19-08-26
 """
 
 #%% 
 # imports
 
 import pandas as pd
-import matplotlib.pyplot as plt
-from scipy import stats
-from scipy.stats import kruskal
 from pathlib import Path
 import os
-import numpy as np
-import scikit_posthocs as sp
-import seaborn as sns
 import numpy as np
 import re
 
@@ -35,10 +29,35 @@ path_geotop_codes = "data/1-external/GeoTOP_lithostrat_afzettingsmilieus _JanG.c
 path_regis_codes = "data/1-external/REGIS_lithostrat_afzettingsmilieus _JanG.csv"
 path_sample_data = f"{path_input}/20260304_tbl20_WPchloride_FFdata_with_facies.csv"
 path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
-#path_results_facies_litho = f"{path_monte_carlo}/lithofacies_for_monte_carlo_with_stratigrafie.csv"
 path_results_facies_litho =  f"{path_monte_carlo}/lithofacies_for_monte_carlo.csv"
 path_results_litho = f"{path_monte_carlo}/litho_for_monte_carlo.csv"
 path_results_strat_litho = f"data/4-output/ff_ecs_uncertainty/dunn_test_results_lithostrat/median_mean_std_stratlitho_no_groups.csv"
+
+mean_dist_ff_grind = 6.5
+mean_dist_ff_schelpen = 5.0
+replacement_litho = "zm" # for "antropogeen" use statistics of this lithoklasse as replacement for missing values
+
+conversion_factor = 1000/100 # from S/m to mS/cm
+
+lithoklassen_naam = {"a": "antropogeen",
+                     "v": "organisch materiaal (veen)",
+                     "k": "klei",
+                     "kz": "kleiig zand, zandige klei en leem",
+                     "zf": "zand fijn",
+                     "zm": "zand midden",
+                     "zg": "zand grof",
+                     "g": "grind",
+                     "sch": "schelpen"}
+
+lithoklassen_index = {"a": 0,
+                     "v": 1,
+                     "k": 2,
+                     "kz": 3,
+                     "zf": 5,
+                     "zm": 6,
+                     "zg": 7,
+                     "g": 8,
+                     "sch": 9}
 
 path_monte_carlo.mkdir(exist_ok=True, parents=True)
 
@@ -57,7 +76,7 @@ def simplify_strat_name(strat):
     strat = re.sub(r"\d+$", "", strat)
 
     # verwijder 2 kleine letters aan het eind (ga, gb, gc, gd, ge)
-    strat = re.sub(r"[a-z]{2}$", "", strat)
+    strat = re.sub(r"[a-z]+$", "", strat)
 
     return strat
 
@@ -68,7 +87,7 @@ def make_strat_short_name(strat):
     Examples:
     NUNAWA1  -> NAWA
     NUECge   -> EC
-    NUNAWOgd -> NAWO
+    NUNAWOgd -> NAWOgd
     NUNIHO   -> NIHO
     CKMA     -> CKMA
     NMTO     -> NMTO
@@ -83,124 +102,51 @@ def make_strat_short_name(strat):
     if strat.startswith("NU"):
         strat = strat[2:]
 
-    # # cijfers aan eind verwijderen
-    # strat = re.sub(r"\d+$", "", strat)
-
-    # # kleine letters aan eind verwijderen (ga, gb, gd, ge, nb, ...)
-    # strat = re.sub(r"[a-z]+$", "", strat)
-
     return strat
 
 #%%
 # read in data
 
-#strat_codes = pd.read_csv(path_strat_codes, index_col=0).reset_index()
 geotop_codes = pd.read_csv(path_geotop_codes)
 regis_codes = pd.read_csv(path_regis_codes)
-df = pd.read_csv(path_sample_data, index_col=0)
-#results_facies_litho = pd.read_csv(path_results_facies_litho, index_col=0).reset_index()
+#df = pd.read_csv(path_sample_data, index_col=0)
 results_litho = pd.read_csv(path_results_litho, index_col=0).reset_index()
 results_strat_litho = pd.read_csv(path_results_strat_litho, index_col=0).reset_index()
 results_facies_litho = pd.read_csv(path_results_facies_litho, index_col=0).reset_index()
 
-lithoklassen_naam = {"a": "antropogeen",
-                     "v": "organisch materiaal (veen)",
-                     "k": "klei",
-                     "kz": "kleiig zand, zandige klei en leem",
-                     "zf": "zand fijn",
-                     "zm": "zand midden",
-                     "zg": "zand grof",
-                     "g": "grind",
-                     "sch": "schelpen",
-                     "r": "rest"}
+
+
 
 #%%
-#prepare strat codes
+# prepare stratigraphy codes
 
 geotop_codes = geotop_codes.rename(
     columns={
-        "VOXEL_NR": "user_nr",
-        "STR_UNIT_CD": "stratigrafie",
+        "STR_UNIT_CD": "unit_cd",
+        "VOXEL_NR": "unit_nr",
     }
 )
 
 regis_codes = regis_codes.rename(
     columns={
-        "formation": "stratigrafie",
+        "formation": "unit_cd",
+        "user_nr": "unit_nr",
     }
 )
 
 
 geotop_codes = geotop_codes[
-    ["stratigrafie", "user_nr", "facies"]
+    ["unit_cd", "unit_nr", "facies"]
 ]
 
 regis_codes = regis_codes[
-    ["stratigrafie", "user_nr", "facies"]
+    ["unit_cd", "unit_nr", "facies"]
 ]
 
 strat_codes = pd.concat(
     [geotop_codes, regis_codes],
     ignore_index=True
 )
-
-#%% 
-# prepare facies groups
-
-# facies_list = ['marien' , 'fluviatiel', 'glaciaal', 'eolisch', 'organisch', 'rest']
-
-# marien_codes = ['NAWA', 'NAWO', 'NAZA', 'NAWOBE', 'EE', 'OO', 'MS', 'OOSP', 'BR', 'WAWO' ]
-
-# fluviatiel_codes = ['URTY', 'URVE', 'AP', 'BXSI', 'UR', 'PZ', 'EC', 'ST', 'WA', 'KK', 'KW' ]
-
-# glaciaal_codes = ['DRGI', 'DRGIGA', 'PENI', 'PE', 'DRUI'] 
-
-# eolisch_codes = ['BX', 'DN', 'BXWI', 'BXKO', 'NASC' ] 
-
-# organisch_codes = ['NIHO', 'NIBA', 'NI']
-
-# rest_codes = ['AAOM'] #TODO: 'NA'?
-
-# codes_per_facies = {
-#     "marien": marien_codes,
-#     "fluviatiel": fluviatiel_codes,
-#     "glaciaal": glaciaal_codes,
-#     "eolisch": eolisch_codes,
-#     "organisch": organisch_codes,
-#     "rest": rest_codes,
-# }
-
-# facies_map = {}
-# for code in marien_codes:
-#     facies_map[code] = "marien"
-# for code in fluviatiel_codes:
-#     facies_map[code] = "fluviatiel"
-# for code in glaciaal_codes:
-#     facies_map[code] = "glaciaal"
-# for code in eolisch_codes:
-#     facies_map[code] = "eolisch"
-# for code in organisch_codes:
-#     facies_map[code] = "organisch"
-# for code in rest_codes:
-#     facies_map[code] = "rest"
-
-
-# facies_map_nu = {}
-
-# for code, facies in facies_map.items():
-#     facies_map_nu[f"NU{code}"] = facies
-
-# short_strat_name = {}
-
-# for code, _ in facies_map.items():
-#     short_strat_name[f"NU{code}"] = code
-
-
-def normalize_strat_code(code):
-    """Normalize stratigraphy code before lookup."""
-    if pd.isna(code):
-        return np.nan
-    return str(code).strip().upper()
 
 
 #%%
@@ -230,7 +176,11 @@ facies_lookup = pd.DataFrame(rows)
 #%%
 df_litho_naam = pd.DataFrame({
     "LITHOKLASSE_CD": list(lithoklassen_naam.keys()),
-    "Lithoklasse_naam": list(lithoklassen_naam.values())
+    "lithoclass_id": [
+        lithoklassen_index[k]
+        for k in lithoklassen_naam.keys()
+    ],
+    "Lithoklasse_naam": list(lithoklassen_naam.values()),
 })
 
 lookup_table = (
@@ -238,15 +188,15 @@ lookup_table = (
 )
 
 lookup_table["strat_short_name"] = (
-    lookup_table["stratigrafie"]
+    lookup_table["unit_cd"]
     .apply(make_strat_short_name)
 )
 
 # raise warning if names are not unique after first simplification 
-if len(lookup_table["strat_short_name"].unique()) != len(lookup_table["stratigrafie"].unique()):
+if len(lookup_table["strat_short_name"].unique()) != len(lookup_table["unit_cd"].unique()):
     raise ValueError(
         f"Aantal unieke strat_short_name ({len(lookup_table['strat_short_name'].unique())}) "
-        f"is niet gelijk aan aantal unieke stratigrafie codes ({len(lookup_table['stratigrafie'].unique())})"
+        f"is niet gelijk aan aantal unieke unit_cd codes ({len(lookup_table['unit_cd'].unique())})"
     )
 
 lookup_table["strat_match"] = (
@@ -254,42 +204,30 @@ lookup_table["strat_match"] = (
     .apply(simplify_strat_name)
 )
 
-# lookup_table["strat_short_name"] = lookup_table["strat_match"].apply(
-#     lambda x: short_strat_name.get(x, np.nan)
-# )
-
-# lookup_table["facies"] = lookup_table["strat_match"].apply(
-#     lambda x: facies_map.get(normalize_strat_code(x), np.nan)
-# )
-
-
 lookup_table["mean_dist_ff"] = np.nan
 lookup_table["mean_dist_surfcond"] = np.nan
 lookup_table["std_dist_ff"] = np.nan
 lookup_table["std_dist_surfcond"] = np.nan
-lookup_table["distribution_type"] = "NaN"
+lookup_table["dist_type"] = "NaN"
 lookup_table["statistiek_literatuur"] = "NaN"
 lookup_table["groepering_statistiek"] = "NaN"
 lookup_table["n"] = np.nan
 
-
-
 #%%
+# create lookup table for monte carlo analysis
 
 # =============================================================================
-# STAP 1: specifieke statistieken op stratigrafie-niveau
+# 1: specifieke statistieken op stratigrafie-niveau
 # =============================================================================
 
-#TODO: UR, 
-# NI (krijgt geen facies maar wel de juiste groepering)
-
+# stratigrafien die binnen de lithoklassen duidelijk significant van elkaar verschillen en vanuit geologisch oogpunt logisch zijn om te onderscheiden
 special_stats = [
     ("v", "NIHO"),
     ("v", "NIBA"),
 ]
 
 for litho, strat in special_stats:
-
+    # haal waarden uit stratlitho resultaten tabel
     strat_stats = results_strat_litho.loc[
         (results_strat_litho["LITHOKLASSE_CD"] == litho)
         & (results_strat_litho["strat_group"] == strat)
@@ -312,22 +250,20 @@ for litho, strat in special_stats:
         strat_stats["std_log_surfcond"],
     ]
 
-    lookup_table.loc[mask, "distribution_type"] = "log"
+    lookup_table.loc[mask, "dist_type"] = "lognorm"
     lookup_table.loc[mask, "statistiek_literatuur"] = "statistiek"
     lookup_table.loc[mask, "groepering_statistiek"] = (
         f"{litho}-[{strat}]"
     )
 
 
-
-#TODO: specifieke waardes toevoegen voor significant verschillende stratigrafien.
-#%%
+#%% 
 
 # =============================================================================
 # 2. Vul lookup-tabel met facies-binnen-litho statistieken
 # =============================================================================
-#TODO: volgens mij gaat dit niet overal goed nog. -> classificeren vanuit facies lijst vanuit tno
 
+# vul vervolgens de lookup-tabel met de facies-binnen-litho statistieken, zodat voor de facies(groepen) die significant van elkaar verschillen de juiste statistiek wordt gebruikt.
 
 lookup_table = lookup_table.merge(
     facies_lookup[
@@ -356,8 +292,7 @@ lookup_table.loc[mask, "mean_dist_surfcond"] = lookup_table.loc[mask, "mean_log_
 lookup_table.loc[mask, "std_dist_ff"] = lookup_table.loc[mask, "std_log_ff"].astype(float)
 lookup_table.loc[mask, "std_dist_surfcond"] = lookup_table.loc[mask, "std_log_surfcond"].astype(float)
 lookup_table.loc[mask, "n"] = lookup_table.loc[mask, "n_stat"].astype(float)
-
-lookup_table.loc[mask, "distribution_type"] = "log"
+lookup_table.loc[mask, "dist_type"] = "lognorm"
 lookup_table.loc[mask, "statistiek_literatuur"] = "statistiek"
 
 
@@ -387,6 +322,8 @@ lookup_table = lookup_table.drop(
 # 3. Vul lookup-tabel met litho statistieken
 # =============================================================================
 
+# Bij ontbrekende facies binnen lithoklassen wordt de statistiek van de lithoklasse gebruikt. Dit is vooral om te zorgen dat het monte carlo scrip niet vastloopt op zeldzame cominaties van lithoklasse en facies
+
 df_litho = results_litho.copy()
 
 lookup_table = lookup_table.merge(
@@ -406,7 +343,7 @@ lookup_table = lookup_table.merge(
     suffixes=("", "_stat")
 )
 
-# vullen waar match gevonden is
+# vullen waar nog geen gegevens staan
 mask = (lookup_table["mean_dist_ff"].isna() & lookup_table["mean_log_ff"].notna())
 
 lookup_table.loc[mask, "mean_dist_ff"] = lookup_table.loc[mask, "mean_log_ff"].astype(float)
@@ -414,13 +351,9 @@ lookup_table.loc[mask, "mean_dist_surfcond"] = lookup_table.loc[mask, "mean_log_
 lookup_table.loc[mask, "std_dist_ff"] = lookup_table.loc[mask, "std_log_ff"].astype(float)
 lookup_table.loc[mask, "std_dist_surfcond"] = lookup_table.loc[mask, "std_log_surfcond"].astype(float)
 lookup_table.loc[mask, "n"] = lookup_table.loc[mask, "n_stat"].astype(float)
-
-lookup_table.loc[mask, "distribution_type"] = "log"
+lookup_table.loc[mask, "dist_type"] = "lognorm"
 lookup_table.loc[mask, "statistiek_literatuur"] = "statistiek"
-
-lookup_table.loc[mask, "groepering_statistiek"] = (
-    lookup_table.loc[mask, "LITHOKLASSE_CD"]
-)
+lookup_table.loc[mask, "groepering_statistiek"] = (lookup_table.loc[mask, "LITHOKLASSE_CD"])
 
 lookup_table = lookup_table.drop(
     columns=[
@@ -433,5 +366,140 @@ lookup_table = lookup_table.drop(
 )
 
 lookup_table.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs.csv", index=False)
+
+#%%
+
+#%%
+# =============================================================================
+# 4. vul ontbrekende lithoklasse aan met literatuur waarde
+# =============================================================================
+
+lithoklasse_uit_literatuur = ["a", "g", "sch"]
+
+
+for litho in lithoklasse_uit_literatuur:
+
+    if litho == "g":
+        mean_dist_ff = mean_dist_ff_grind
+        mean_dist_surfcond = 0
+        std_dist_ff = 0
+        std_dist_surfcond = 0
+        source = "literatuur"
+        group = ""
+        n = np.nan
+    elif litho == "sch":
+        mean_dist_ff = mean_dist_ff_schelpen
+        mean_dist_surfcond = 0
+        std_dist_ff = 0
+        std_dist_surfcond = 0
+        source = "literatuur"
+        group = ""
+        n = np.nan
+    elif litho == "a": # for "antropogeen" use statistics of this lithoklasse as replacement for missing values
+        mean_dist_ff = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "mean_log_ff"].values[0]
+        mean_dist_surfcond = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "mean_log_surfcond"].values[0]
+        std_dist_ff = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "std_log_ff"].values[0]
+        std_dist_surfcond = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "std_log_surfcond"].values[0]
+        n = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "n"].values[0]
+        source = "statistiek"
+        group = f"{replacement_litho}"
+
+    mask = ((lookup_table["LITHOKLASSE_CD"] == litho) & (lookup_table["mean_dist_ff"].isna()))
+
+    lookup_table.loc[mask, [
+        "mean_dist_ff",
+        "mean_dist_surfcond",
+        "std_dist_ff",
+        "std_dist_surfcond",
+        "n"
+    ]] = [
+        mean_dist_ff,
+        mean_dist_surfcond,
+        std_dist_ff,
+        std_dist_surfcond,
+        n
+    ]
+
+    lookup_table.loc[mask, "dist_type"] = "norm"
+    lookup_table.loc[mask, "statistiek_literatuur"] = source
+    lookup_table.loc[mask, "groepering_statistiek"] = group
+
+
+#%%
+
+# verander volgorde van kolommen zodat deze beter leesbaar is in excel
+column_order = [
+    "unit_cd",
+    "unit_nr",
+    "facies",
+    "LITHOKLASSE_CD",
+    "Lithoklasse_naam",
+    "lithoclass_id",
+    "strat_short_name",
+    "strat_match",
+    "mean_dist_ff",
+    "std_dist_ff",
+    "mean_dist_surfcond",
+    "std_dist_surfcond",
+    "dist_type",
+    "statistiek_literatuur",
+    "groepering_statistiek",
+    "n",
+]
+
+lookup_table = lookup_table[column_order]
+
+lookup_table_geotop = lookup_table.loc[(lookup_table["unit_nr"] == 0) | (lookup_table["unit_nr"] >= 1000)]
+lookup_table_regis = lookup_table.loc[(lookup_table["unit_nr"] > 0) & (lookup_table["unit_nr"] < 1000)]
+
+# lookup_table.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs.csv", index=False)
+# lookup_table_geotop.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop.csv", index=False)
+# lookup_table_regis.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_regis.csv", index=False)
+
+# add units
+# multi index for units as second row in excel
+
+units = {
+    "unit_cd": "[-]",
+    "unit_nr": "[-]",
+    "facies": "[-]",
+    "LITHOKLASSE_CD": "[-]",
+    "lithoclass_id": "[-]",
+    "Lithoklasse_naam": "[-]",
+    "strat_short_name": "[-]",
+    "strat_match": "[-]",
+    "mean_dist_ff": "log10(FF[-]) or FF[-]", # de gemeten waarden van de FF en ECs zijn eerst getransformeerd naar log10, daarna is van deze set de mean, std etc berekend. Na het trekken van de waardes voor de monte carlo anlyse moet de getrokken waarde is terug getransformeed worden (i.e. 10**(np.random.normal(mean_log_ff, std_log_ff)) 
+    "std_dist_ff": "log10(FF[-]) or FF[-]",
+    "mean_dist_surfcond": "log10(ECs[S/m]) or ECs[S/m]",  # zelfde verhaal als voor FF en daarna moet getrokken+teruggetransformeerde waarde nog omgerekend worden naar de juiste unit (van S/m naar naar mS/cm = terug getransformeerde waarde*1000/100)
+    "std_dist_surfcond": "log10(ECs[S/m]) or ECs[S/m]",
+    "dist_type": "[-]",
+    "statistiek_literatuur": "[-]",
+    "groepering_statistiek": "[-]",
+    "n": "[-]",
+}
+
+
+lookup_excel = lookup_table.copy()
+lookup_excel.columns = pd.MultiIndex.from_tuples(
+    [(col, units.get(col, ""))
+        for col in lookup_excel.columns])
+
+lookup_excel_geotop = lookup_table_geotop.copy()
+lookup_excel_geotop.columns = pd.MultiIndex.from_tuples(
+    [(col, units.get(col, ""))
+        for col in lookup_excel_geotop.columns])
+
+lookup_excel_regis = lookup_table_regis.copy()
+lookup_excel_regis.columns = pd.MultiIndex.from_tuples(
+    [(col, units.get(col, ""))
+        for col in lookup_excel_regis.columns])
+
+# lookup_excel.to_excel(f"{path_monte_carlo}/look_up_table_ff_ECs.xlsx")
+# lookup_excel_geotop.to_excel(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop.xlsx")
+# lookup_excel_regis.to_excel(f"{path_monte_carlo}/look_up_table_ff_ECs_regis.xlsx")
+
+lookup_excel.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs.csv", index=False)
+lookup_excel_geotop.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop.csv", index=False)
+lookup_excel_regis.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_regis.csv", index=False)
 
 #%%
