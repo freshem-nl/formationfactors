@@ -36,6 +36,12 @@ path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 path_out = Path("data/4-output/ff_ecs_uncertainty/cluster_plots")
 
+SIP5 = False # include (True) of exclude (False) SIP5
+
+if SIP5 == True:
+    path_out = Path("data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/scatter_plots_lithostrat")
+
+
 path_out.mkdir(parents=True, exist_ok=True)
 
 # kolomnamen
@@ -105,6 +111,11 @@ if type_filter_col in df_all.columns:
     df = df_all.loc[df_all[type_filter_col] == type_filter_val].copy()
 else:
     df = df_all.copy()
+
+# add SIP5 data to dataset
+if SIP5 == True:
+    df.loc[df[surfcond_col].isna() & (df["FF_SIP5"] == "Yes"), [surfcond_col,ff_col]] = df.loc[df[surfcond_col].isna() & (df["FF_SIP5"] == "Yes"), ["SIP5_SurfCond_Sigmas_S/m", "SIP5_FormationFactor_F5_unitless"]].values
+
 
 # if lithoclass is missing, look if statlithoclass exists
 if litho_col in df.columns and stratlitho_col in df.columns:
