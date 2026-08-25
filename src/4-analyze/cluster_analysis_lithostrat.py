@@ -243,6 +243,11 @@ df_overview = pd.concat(rows, ignore_index=True)
 # --- create legend ---
 # create fixed colors
 strats = sorted(df_overview[strat_col].astype(str).unique())
+if (SIP5 == True) & ("NASC" in strats):
+    # place NASC last in order to keep same symbols and colors as in SIP3
+    strats.remove("NASC") 
+    strats.append("NASC")
+
 palette_strat = dict(zip(strats, sns.color_palette("tab20", n_colors=len(strats))))
 # set order categories to get a fixed legend 
 lithostrat_cat = df_overview[strat_col].unique() # only strat ≥ 5 samples for at least one lithoclass

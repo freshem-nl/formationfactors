@@ -689,7 +689,6 @@ manual_groups = [
 # manual_groups = [ 
 #     {"lithoklasse": "zg", "strats": ["AP", "PZ"], "group": "AP+PZ"},
 #     {"lithoklasse": "kz", "strats": ["BX", "DRGI"], "group": "BX+DRGI"},
-#     #{"lithoklasse": "kz", "strats": ["NAWA", "NAWO"], "group": "NAWA+NAWO"},
 #     {"lithoklasse": "zm", "strats": ["NASC","NAWA", "NAWO", "NAZA", "OO"], "group": "NAWA+NAWO+NAZA+OO"},
 #     {"lithoklasse": "zm", "strats": ["BX", "BXWI"], "group": "BX+BXWI"},
 #     {"lithoklasse": "zf", "strats": ["NAWO", "DRUI"], "group": "NAWO+DRUI"}, #TODO: of DRUI+BX # ik heb gekozen voor nawo (marien) en DRUI (glaciaal) samen ipv BX (eolisch) omdat op facies niveau marien en glaciaal samen worden genomen
