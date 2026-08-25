@@ -25,13 +25,26 @@ import re
 os.chdir(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 path_input = Path("data/3-input")
-path_geotop_codes = "data/1-external/GeoTOP_lithostrat_afzettingsmilieus _JanG.csv"
-path_regis_codes = "data/1-external/REGIS_lithostrat_afzettingsmilieus _JanG.csv"
+path_geotop_codes = "data/1-external/GeoTOP_formaties_afzettingsmilieus _JanG_final.csv"
+path_regis_codes = "data/1-external/regis_formaties_afzettingsmilieus _JanG_final.csv"
 path_sample_data = f"{path_input}/20260304_tbl20_WPchloride_FFdata_with_facies.csv"
-path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
+
+SIP5 = False # include (True) of exclude (False) SIP5
+
+if SIP5 == True:
+    print("SIP3 + SIP5 measurements")
+    path_monte_carlo = Path("data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/for_monte_carlo")
+    path_results_strat_litho = f"data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/dunn_test_results_lithostrat/median_mean_std_stratlitho_manual_groups.csv"
+    str_sip = "_with_SIP5"
+else:
+    print("only SIP3 measurements")
+    path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
+    path_results_strat_litho = f"data/4-output/ff_ecs_uncertainty/dunn_test_results_lithostrat/median_mean_std_stratlitho_manual_groups.csv"
+    str_sip = ""
+
 path_results_facies_litho =  f"{path_monte_carlo}/lithofacies_for_monte_carlo.csv"
 path_results_litho = f"{path_monte_carlo}/litho_for_monte_carlo.csv"
-path_results_strat_litho = f"data/4-output/ff_ecs_uncertainty/dunn_test_results_lithostrat/median_mean_std_stratlitho_no_groups.csv"
+
 
 mean_dist_ff_grind = 6.5
 mean_dist_ff_schelpen = 5.0
@@ -221,40 +234,61 @@ lookup_table["n"] = np.nan
 # =============================================================================
 
 # stratigrafien die binnen de lithoklassen duidelijk significant van elkaar verschillen en vanuit geologisch oogpunt logisch zijn om te onderscheiden
+
+# only SIP3
 special_stats = [
-    ("v", "NIHO"),
-    ("v", "NIBA"),
+    ("v", "NIHO", ["NIHO"]),
+    ("v", "NIBA", ["NIBA"]),
+    ("kz", "EC", ["EC"]),
+    ("kz", "WA", ["WA"]),
+    ("kz", "NAWA+NAWO", ["NAWA", "NAWO"]),
+    ("kz", "BX+DRGI", ["BX", "DRGI"]) #DRGI niet voor DRUI denk ik 
 ]
 
-for litho, strat in special_stats:
+for litho, strat_group, strats in special_stats:
     # haal waarden uit stratlitho resultaten tabel
     strat_stats = results_strat_litho.loc[
         (results_strat_litho["LITHOKLASSE_CD"] == litho)
-        & (results_strat_litho["strat_group"] == strat)
+        & (results_strat_litho["strat_group"] == strat_group)
     ].iloc[0]
 
-    mask = (
-        (lookup_table["LITHOKLASSE_CD"] == litho)
-        & (lookup_table["strat_match"] == strat)
-    )
+    for strat in strats:
 
-    lookup_table.loc[mask, [
-        "mean_dist_ff",
-        "mean_dist_surfcond",
-        "std_dist_ff",
-        "std_dist_surfcond"
-    ]] = [
-        strat_stats["mean_log_ff"],
-        strat_stats["mean_log_surfcond"],
-        strat_stats["std_log_ff"],
-        strat_stats["std_log_surfcond"],
-    ]
+        allowed_facies = (
+            lookup_table.loc[
+                lookup_table["strat_match"] == strat,
+                "facies"
+            ]
+            .dropna()
+            .unique()
+        )
 
-    lookup_table.loc[mask, "dist_type"] = "lognorm"
-    lookup_table.loc[mask, "statistiek_literatuur"] = "statistiek"
-    lookup_table.loc[mask, "groepering_statistiek"] = (
-        f"{litho}-[{strat}]"
-    )
+        mask = (
+            (lookup_table["LITHOKLASSE_CD"] == litho)
+            & lookup_table["facies"].isin(allowed_facies)
+            & lookup_table["strat_match"].apply(
+                lambda x: x.startswith(strat)
+            )
+        )
+
+        lookup_table.loc[mask, [
+            "mean_dist_ff",
+            "mean_dist_surfcond",
+            "std_dist_ff",
+            "std_dist_surfcond",
+            "n"
+        ]] = [
+            strat_stats["mean_log_ff"],
+            strat_stats["mean_log_surfcond"],
+            strat_stats["std_log_ff"],
+            strat_stats["std_log_surfcond"],
+            strat_stats["n"]
+        ]
+
+        lookup_table.loc[mask, "dist_type"] = "lognorm"
+        lookup_table.loc[mask, "statistiek_literatuur"] = "statistiek"
+        lookup_table.loc[mask, "groepering_statistiek"] = (f"{litho}-[{strat_group}]")
+        
 
 
 #%% 
@@ -498,8 +532,8 @@ lookup_excel_regis.columns = pd.MultiIndex.from_tuples(
 # lookup_excel_geotop.to_excel(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop.xlsx")
 # lookup_excel_regis.to_excel(f"{path_monte_carlo}/look_up_table_ff_ECs_regis.xlsx")
 
-lookup_excel.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs.csv", index=False)
-lookup_excel_geotop.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop.csv", index=False)
-lookup_excel_regis.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_regis.csv", index=False)
+lookup_excel.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_v3{str_sip}.csv", index=False)
+lookup_excel_geotop.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop_v3{str_sip}.csv", index=False)
+lookup_excel_regis.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_regis_v3{str_sip}.csv", index=False)
 
 #%%

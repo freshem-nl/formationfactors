@@ -38,10 +38,17 @@ path_input = Path("data/3-input")
 path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
-path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results_litho_and_facies_combos")
-path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
 
 alpha = 0.1
+
+SIP5 = False # include (True) of exclude (False) SIP5
+
+if SIP5 == True:
+    path_results = Path("data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/dunn_test_results_litho_and_facies_combos")
+    path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/for_monte_carlo")
+else:
+    path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results_litho_and_facies_combos")
+    path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
 
 path_results.mkdir(exist_ok=True, parents=True)
 path_monte_carlo.mkdir(exist_ok=True, parents=True)
@@ -66,6 +73,9 @@ strat_col = "Stratigrafie"
 stratlitho_col = "StratLithoklasse"
 facies_col = "facies"
 
+# add SIP5 data to dataset
+if SIP5 == True:
+    df.loc[df[surfcond_col].isna() & (df["FF_SIP5"] == "Yes"), [surfcond_col,ff_col]] = df.loc[df[surfcond_col].isna() & (df["FF_SIP5"] == "Yes"), ["SIP5_SurfCond_Sigmas_S/m", "SIP5_FormationFactor_F5_unitless"]].values
 
 # clean up data
 
@@ -616,7 +626,14 @@ df[facies_col] = df[strat_col].apply(assign_facies)
 
 df = df.loc[df[facies_col].notnull()].copy() # omit samples with unknown facies
 
-df.to_csv(f"{path_input}/20260304_tbl20_WPchloride_FFdata_with_facies.csv", index=False)
+if SIP5 == True:
+    df_for_saving = df.copy()
+    df_for_saving["FF_SIP3_SIP5"] = df[ff_col]
+    df_for_saving["surfcond_SIP3_SIP5_S/m"] = df[surfcond_col]
+    df_for_saving.loc[df_for_saving["SIP5_FormationFactor_F5_unitless"].notna(),[ff_col, surfcond_col]] = np.nan
+    df_for_saving.to_csv(f"{path_input}/20260304_tbl20_WPchloride_FFdata_with_facies_SIP3_SIP5_combined.csv", index=False)
+else:
+    df.to_csv(f"{path_input}/20260304_tbl20_WPchloride_FFdata_with_facies.csv", index=False)
 
 
 
@@ -1002,14 +1019,22 @@ print(f"Boxplots opgeslagen in: {path_figs}")
 
 # -- median facies ---
 
+# only SIP3 # we gebruiken deze ook voor SIP3+SIP5
 manual_groups = [
     {"lithoklasse": "kz", "facies": ["eolisch", "glaciaal"], "group": "eolisch+glaciaal"},
     {"lithoklasse": "kz", "facies": ["fluviatiel", "marien"], "group": "fluviatiel+marien"},
     {"lithoklasse": "zf", "facies": ["eolisch", "fluviatiel"], "group": "eolisch+fluviatiel"}, # TODO: fluviatiel had ook bij glaciaal + marien gezet kunnen worden
     {"lithoklasse": "zf", "facies": ["glaciaal", "marien"], "group": "glaciaal+marien"},
     {"lithoklasse": "zm", "facies": ["eolisch", "fluviatiel", "glaciaal"], "group": "eolisch+fluviatiel+glaciaal"},
-
 ]
+
+# SIP3 + SIP5 
+# manual_groups = [
+#     {"lithoklasse": "kz", "facies": ["eolisch", "glaciaal"], "group": "eolisch+glaciaal"},
+#     {"lithoklasse": "zf", "facies": ["eolisch", "fluviatiel"], "group": "eolisch+fluviatiel"}, # TODO: fluviatiel had ook bij glaciaal + marien gezet kunnen worden
+#     {"lithoklasse": "zf", "facies": ["glaciaal", "marien"], "group": "glaciaal+marien"},
+#     {"lithoklasse": "zm", "facies": ["eolisch", "fluviatiel", "glaciaal"], "group": "eolisch+fluviatiel+glaciaal"},
+# ]
 
 # create litho-facies_combos
 lithofacies_combos = results_litho_facies_df.loc[results_litho_facies_df["variable"]== "formation_factor"][["lithoklasse", "group_members"]]

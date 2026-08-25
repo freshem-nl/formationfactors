@@ -36,10 +36,18 @@ os.chdir(os.path.join(os.path.dirname(__file__), "..", ".."))
 path_labresults = Path("data/3-input/lab_results")
 fn_labresults = path_labresults / "20260304_tbl20_WPchloride_FFdata.xlsx"
 fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_Full.xlsx"
-path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results_lithostrat")
-path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
 
 alpha = 0.1
+
+SIP5 = False # include (True) of exclude (False) SIP5
+
+if SIP5 == True:
+    path_results = Path("data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/dunn_test_results_lithostrat")
+    path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/for_monte_carlo")
+else:
+    path_results = Path("data/4-output/ff_ecs_uncertainty/dunn_test_results_lithostrat")
+    path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
+
 
 path_results.mkdir(exist_ok=True, parents=True)
 path_monte_carlo.mkdir(exist_ok=True, parents=True)
@@ -59,6 +67,10 @@ surfcond_col = "SIP3_SurfCond_Sigmas_3W_S/m"
 litho_col = "LITHOKLASSE_CD"
 strat_col = "Stratigrafie"
 stratlitho_col = "StratLithoklasse"
+
+# add SIP5 data to dataset
+if SIP5 == True:
+    df.loc[df[surfcond_col].isna() & (df["FF_SIP5"] == "Yes"), [surfcond_col,ff_col]] = df.loc[df[surfcond_col].isna() & (df["FF_SIP5"] == "Yes"), ["SIP5_SurfCond_Sigmas_S/m", "SIP5_FormationFactor_F5_unitless"]].values
 
 
 # clean up data
@@ -662,6 +674,7 @@ print(f"Boxplots opgeslagen in: {path_figs}")
 
 # -- statistics stratigraphy ---
 
+# only SIP3
 manual_groups = [
     {"lithoklasse": "zg", "strats": ["AP", "PZ"], "group": "AP+PZ"},
     {"lithoklasse": "kz", "strats": ["BX", "DRGI"], "group": "BX+DRGI"},
@@ -671,6 +684,17 @@ manual_groups = [
     {"lithoklasse": "zm", "strats": ["NAWA", "NAWO", "NAZA", "OO"], "group": "NAWA+NAWO+NAZA+OO"},
     {"lithoklasse": "zm", "strats": ["BX", "BXWI"], "group": "BX+BXWI"},
 ]
+
+# SIP3 + SIP5 # we gaan nu gewoon de oude indeling gebruiken.
+# manual_groups = [ 
+#     {"lithoklasse": "zg", "strats": ["AP", "PZ"], "group": "AP+PZ"},
+#     {"lithoklasse": "kz", "strats": ["BX", "DRGI"], "group": "BX+DRGI"},
+#     #{"lithoklasse": "kz", "strats": ["NAWA", "NAWO"], "group": "NAWA+NAWO"},
+#     {"lithoklasse": "zm", "strats": ["NASC","NAWA", "NAWO", "NAZA", "OO"], "group": "NAWA+NAWO+NAZA+OO"},
+#     {"lithoklasse": "zm", "strats": ["BX", "BXWI"], "group": "BX+BXWI"},
+#     {"lithoklasse": "zf", "strats": ["NAWO", "DRUI"], "group": "NAWO+DRUI"}, #TODO: of DRUI+BX # ik heb gekozen voor nawo (marien) en DRUI (glaciaal) samen ipv BX (eolisch) omdat op facies niveau marien en glaciaal samen worden genomen
+#     {"lithoklasse": "v", "strats": ["NIBA", "NIHO"], "group": "NIBA+NIHO"},
+# ]
 
 # create stratlitho_combos
 stratlitho_combos = results_litho_strat_df.loc[results_litho_strat_df["variable"]== "formation_factor"][["lithoklasse", "strats"]]
