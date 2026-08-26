@@ -35,12 +35,12 @@ if SIP5 == True:
     print("SIP3 + SIP5 measurements")
     path_monte_carlo = Path("data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/for_monte_carlo")
     path_results_strat_litho = f"data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/dunn_test_results_lithostrat/median_mean_std_stratlitho_manual_groups.csv"
-    str_sip = "_with_SIP5"
+    str_sip = "_SIP3_SIP5"
 else:
     print("only SIP3 measurements")
     path_monte_carlo =Path("data/4-output/ff_ecs_uncertainty/for_monte_carlo")
     path_results_strat_litho = f"data/4-output/ff_ecs_uncertainty/dunn_test_results_lithostrat/median_mean_std_stratlitho_manual_groups.csv"
-    str_sip = ""
+    str_sip = "_SIP3"
 
 path_results_facies_litho =  f"{path_monte_carlo}/lithofacies_for_monte_carlo.csv"
 path_results_litho = f"{path_monte_carlo}/litho_for_monte_carlo.csv"
@@ -399,8 +399,6 @@ lookup_table = lookup_table.drop(
     ]
 )
 
-lookup_table.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs.csv", index=False)
-
 #%%
 
 #%%
@@ -502,10 +500,10 @@ units = {
     "Lithoklasse_naam": "[-]",
     "strat_short_name": "[-]",
     "strat_match": "[-]",
-    "mean_dist_ff": "log10(FF[-]) or FF[-]", # de gemeten waarden van de FF en ECs zijn eerst getransformeerd naar log10, daarna is van deze set de mean, std etc berekend. Na het trekken van de waardes voor de monte carlo anlyse moet de getrokken waarde is terug getransformeed worden (i.e. 10**(np.random.normal(mean_log_ff, std_log_ff)) 
-    "std_dist_ff": "log10(FF[-]) or FF[-]",
-    "mean_dist_surfcond": "log10(ECs[S/m]) or ECs[S/m]",  # zelfde verhaal als voor FF en daarna moet getrokken+teruggetransformeerde waarde nog omgerekend worden naar de juiste unit (van S/m naar naar mS/cm = terug getransformeerde waarde*1000/100)
-    "std_dist_surfcond": "log10(ECs[S/m]) or ECs[S/m]",
+    "mean_dist_ff": "ln(FF[-]) or FF[-]", # de gemeten waarden van de FF en ECs zijn eerst getransformeerd naar ln, daarna is van deze set de mean, std etc berekend. Na het trekken van de waardes voor de monte carlo anlyse moet de getrokken waarde is terug getransformeed worden (i.e. np.exp((np.random.normal(mean_log_ff, std_log_ff))) 
+    "std_dist_ff": "ln(FF[-]) or FF[-]",
+    "mean_dist_surfcond": "ln(ECs[S/m]) or ECs[S/m]",  # zelfde verhaal als voor FF en daarna moet getrokken+teruggetransformeerde waarde nog omgerekend worden naar de juiste unit (van S/m naar naar mS/cm = terug getransformeerde waarde*1000/100)
+    "std_dist_surfcond": "ln(ECs[S/m]) or ECs[S/m]",
     "dist_type": "[-]",
     "statistiek_literatuur": "[-]",
     "groepering_statistiek": "[-]",
@@ -532,8 +530,8 @@ lookup_excel_regis.columns = pd.MultiIndex.from_tuples(
 # lookup_excel_geotop.to_excel(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop.xlsx")
 # lookup_excel_regis.to_excel(f"{path_monte_carlo}/look_up_table_ff_ECs_regis.xlsx")
 
-lookup_excel.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_v3{str_sip}.csv", index=False)
-lookup_excel_geotop.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop_v3{str_sip}.csv", index=False)
-lookup_excel_regis.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_regis_v3{str_sip}.csv", index=False)
+lookup_excel.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_v4_ln{str_sip}.csv", index=False)
+lookup_excel_geotop.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_geotop_v4_ln{str_sip}.csv", index=False)
+lookup_excel_regis.to_csv(f"{path_monte_carlo}/look_up_table_ff_ECs_regis_v4_ln{str_sip}.csv", index=False)
 
 #%%

@@ -90,8 +90,8 @@ if len(df.loc[~df[ff_col].notnull()])>0: #TODO: if SIP3 is missing, take SIP5?
     print("Warning: some samples have missing formation factors, these are removed from the analysis.\nConsider using SIP5_formation_factor_F_3W_unitless if SIP3 is missing.")
 df = df.loc[df[ff_col].notnull() & df[surfcond_col].notnull() & df[litho_col].notnull() & df[strat_col].notnull()].copy()
 
-df["log10_FF"] = np.log10(df[ff_col])
-df["log10_surfcond"] = np.log10(df[surfcond_col])
+df["log_FF"] = np.log(df[ff_col])
+df["log_surfcond"] = np.log(df[surfcond_col])
 
 # do not take AAOM (anthropogenic) for analysis 
 df = df.loc[df["Stratigrafie"]!='AAOM'].copy()
@@ -361,7 +361,7 @@ def calc_lithofacies_medians(
             # calc median for this group of members
             mask = (df[litho_col] == litho) & (df[facies_col].isin(members))
             sub = df.loc[mask, [ff_col, surfcond_col]].dropna()
-            sub_log = df.loc[mask, ["log10_FF", "log10_surfcond"]].dropna()
+            sub_log = df.loc[mask, ["log_FF", "log_surfcond"]].dropna()
 
             if sub.empty:
                 continue
@@ -374,24 +374,24 @@ def calc_lithofacies_medians(
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
                 "median_surfcond_S/m": sub[surfcond_col].median(),
-                "median_log_ff": sub_log["log10_FF"].median(),
-                "median_log_surfcond": sub_log["log10_surfcond"].median(),
-                "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
-                "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
+                "median_log_ff": sub_log["log_FF"].median(),
+                "median_log_surfcond": sub_log["log_surfcond"].median(),
+                "median_log_ff_to_linear_scale": np.exp(sub_log["log_FF"].median()),
+                "median_log_surfcond_to_linear_scale": np.exp(sub_log["log_surfcond"].median()),
                 "mean_ff": sub[ff_col].mean(),
                 "mean_surfcond_S/m": sub[surfcond_col].mean(),
-                "mean_log_ff": sub_log["log10_FF"].mean(),
-                "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
-                "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
-                "mean_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].mean(),
+                "mean_log_ff": sub_log["log_FF"].mean(),
+                "mean_log_surfcond": sub_log["log_surfcond"].mean(),
+                "mean_log_ff_to_linear_scale": np.exp(sub_log["log_FF"].mean()),
+                "mean_log_surfcond_to_linear_scale": np.exp(sub_log["log_surfcond"].mean()),
                 "std_ff_linear_scale": sub[ff_col].std(),
                 "std_surfcond_linear_scale": sub[surfcond_col].std(),
-                "std_log_ff": sub_log["log10_FF"].std(),
-                "std_log_surfcond": sub_log["log10_surfcond"].std(),                
+                "std_log_ff": sub_log["log_FF"].std(),
+                "std_log_surfcond": sub_log["log_surfcond"].std(),                
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
                 "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
-                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log_FF", "log_surfcond"]].cov().values[0,1],
                 "manual_grouping": True,
             })
 
@@ -402,7 +402,7 @@ def calc_lithofacies_medians(
         for facies in remaining:
             mask = (df[litho_col] == litho) & (df[facies_col] == facies)
             sub = df.loc[mask, [ff_col, surfcond_col]].dropna()
-            sub_log = df.loc[mask, ["log10_FF", "log10_surfcond"]].dropna()
+            sub_log = df.loc[mask, ["log_FF", "log_surfcond"]].dropna()
             if sub.empty:
                 continue
 
@@ -413,24 +413,24 @@ def calc_lithofacies_medians(
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
                 "median_surfcond_S/m": sub[surfcond_col].median(),
-                "median_log_ff": sub_log["log10_FF"].median(),
-                "median_log_surfcond": sub_log["log10_surfcond"].median(),
-                "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
-                "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
+                "median_log_ff": sub_log["log_FF"].median(),
+                "median_log_surfcond": sub_log["log_surfcond"].median(),
+                "median_log_ff_to_linear_scale": np.exp(sub_log["log_FF"].median()),
+                "median_log_surfcond_to_linear_scale": np.exp(sub_log["log_surfcond"].median()),
                 "mean_ff": sub[ff_col].mean(),
                 "mean_surfcond_S/m": sub[surfcond_col].mean(),
-                "mean_log_ff": sub_log["log10_FF"].mean(),
-                "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
-                "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
-                "mean_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].mean(),
+                "mean_log_ff": sub_log["log_FF"].mean(),
+                "mean_log_surfcond": sub_log["log_surfcond"].mean(),
+                "mean_log_ff_to_linear_scale": np.exp(sub_log["log_FF"].mean()),
+                "mean_log_surfcond_to_linear_scale": np.exp(sub_log["log_surfcond"].mean()),
                 "std_ff_linear_scale": sub[ff_col].std(),
                 "std_surfcond_linear_scale": sub[surfcond_col].std(),
-                "std_log_ff": sub_log["log10_FF"].std(),
-                "std_log_surfcond": sub_log["log10_surfcond"].std(),
+                "std_log_ff": sub_log["log_FF"].std(),
+                "std_log_surfcond": sub_log["log_surfcond"].std(),
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
                 "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
-                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log_FF", "log_surfcond"]].cov().values[0,1],
                 "manual_grouping": False,
             })
 
@@ -487,7 +487,7 @@ def calc_facieslitho_medians(
             # calc median for this group of members
             mask = (df[facies_col] == facies) & (df[litho_col].isin(members))
             sub = df.loc[mask, [ff_col, surfcond_col]].dropna()
-            sub_log = df.loc[mask, ["log10_FF", "log10_surfcond"]].dropna()
+            sub_log = df.loc[mask, ["log_FF", "log_surfcond"]].dropna()
 
             if sub.empty:
                 continue
@@ -500,24 +500,24 @@ def calc_facieslitho_medians(
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
                 "median_surfcond_S/m": sub[surfcond_col].median(),
-                "median_log_ff": sub_log["log10_FF"].median(),
-                "median_log_surfcond": sub_log["log10_surfcond"].median(),
-                "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
-                "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
+                "median_log_ff": sub_log["log_FF"].median(),
+                "median_log_surfcond": sub_log["log_surfcond"].median(),
+                "median_log_ff_to_linear_scale": np.exp(sub_log["log_FF"].median()),
+                "median_log_surfcond_to_linear_scale": np.exp(sub_log["log_surfcond"].median()),
                 "mean_ff": sub[ff_col].mean(),
                 "mean_surfcond_S/m": sub[surfcond_col].mean(),
-                "mean_log_ff": sub_log["log10_FF"].mean(),
-                "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
-                "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
-                "mean_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].mean(),
+                "mean_log_ff": sub_log["log_FF"].mean(),
+                "mean_log_surfcond": sub_log["log_surfcond"].mean(),
+                "mean_log_ff_to_linear_scale": np.exp(sub_log["log_FF"].mean()),
+                "mean_log_surfcond_to_linear_scale": np.exp(sub_log["log_surfcond"].mean()),
                 "std_ff_linear_scale": sub[ff_col].std(),
                 "std_surfcond_linear_scale": sub[surfcond_col].std(),
-                "std_log_ff": sub_log["log10_FF"].std(),
-                "std_log_surfcond": sub_log["log10_surfcond"].std(),
+                "std_log_ff": sub_log["log_FF"].std(),
+                "std_log_surfcond": sub_log["log_surfcond"].std(),
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
                 "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
-                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log_FF", "log_surfcond"]].cov().values[0,1],
                 "manual_grouping": True,
             })
 
@@ -528,7 +528,7 @@ def calc_facieslitho_medians(
         for litho in remaining:
             mask = (df[facies_col] == facies) & (df[litho_col] == litho)
             sub = df.loc[mask, [ff_col, surfcond_col]].dropna()
-            sub_log = df.loc[mask, ["log10_FF", "log10_surfcond"]].dropna()
+            sub_log = df.loc[mask, ["log_FF", "log_surfcond"]].dropna()
             if sub.empty:
                 continue
 
@@ -539,24 +539,24 @@ def calc_facieslitho_medians(
                 "n": len(sub),
                 "median_ff": sub[ff_col].median(),
                 "median_surfcond_S/m": sub[surfcond_col].median(),
-                "median_log_ff": sub_log["log10_FF"].median(),
-                "median_log_surfcond": sub_log["log10_surfcond"].median(),
-                "median_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].median(),
-                "median_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].median(),
+                "median_log_ff": sub_log["log_FF"].median(),
+                "median_log_surfcond": sub_log["log_surfcond"].median(),
+                "median_log_ff_to_linear_scale": np.exp(sub_log["log_FF"].median()),
+                "median_log_surfcond_to_linear_scale": np.exp(sub_log["log_surfcond"].median()),
                 "mean_ff": sub[ff_col].mean(),
                 "mean_surfcond_S/m": sub[surfcond_col].mean(),
-                "mean_log_ff": sub_log["log10_FF"].mean(),
-                "mean_log_surfcond": sub_log["log10_surfcond"].mean(),
-                "mean_log_ff_to_linear_scale": 10 ** sub_log["log10_FF"].mean(),
-                "mean_log_surfcond_to_linear_scale": 10 ** sub_log["log10_surfcond"].mean(),
+                "mean_log_ff": sub_log["log_FF"].mean(),
+                "mean_log_surfcond": sub_log["log_surfcond"].mean(),
+                "mean_log_ff_to_linear_scale": np.exp(sub_log["log_FF"].mean()),
+                "mean_log_surfcond_to_linear_scale": np.exp(sub_log["log_surfcond"].mean()),
                 "std_ff_linear_scale": sub[ff_col].std(),
                 "std_surfcond_linear_scale": sub[surfcond_col].std(),
-                "std_log_ff": sub_log["log10_FF"].std(),
-                "std_log_surfcond": sub_log["log10_surfcond"].std(),
+                "std_log_ff": sub_log["log_FF"].std(),
+                "std_log_surfcond": sub_log["log_surfcond"].std(),
                 "iqr_ff_linear_scale": sub[ff_col].quantile(0.75) - sub[ff_col].quantile(0.25),
                 "iqr_surfcond_linear_scale": sub[surfcond_col].quantile(0.75) - sub[surfcond_col].quantile(0.25),
                 "cov_ff_surfcond": sub[[ff_col, surfcond_col]].cov().values[0,1],
-                "cov_log_ff_surfcond": sub_log[["log10_FF", "log10_surfcond"]].cov().values[0,1],
+                "cov_log_ff_surfcond": sub_log[["log_FF", "log_surfcond"]].cov().values[0,1],
                 "manual_grouping": False,
             })
 
@@ -843,15 +843,15 @@ dunn_surfcond_litho.to_csv(path_results / "dunn_surfcond_litho.csv", index=False
 agg_litho = (
     df.groupby(litho_col)
     .agg(
-        n=("log10_FF", "count"), 
+        n=("log_FF", "count"), 
 
         # log-scale statistics
-        median_log_ff=("log10_FF", "median"),
-        median_log_surfcond=("log10_surfcond", "median"),
-        mean_log_ff=("log10_FF", "mean"),
-        mean_log_surfcond=("log10_surfcond", "mean"),
-        std_log_ff=("log10_FF", "std"),
-        std_log_surfcond=("log10_surfcond", "std"),
+        median_log_ff=("log_FF", "median"),
+        median_log_surfcond=("log_surfcond", "median"),
+        mean_log_ff=("log_FF", "mean"),
+        mean_log_surfcond=("log_surfcond", "mean"),
+        std_log_ff=("log_FF", "std"),
+        std_log_surfcond=("log_surfcond", "std"),
     )
     .reset_index())
 
@@ -875,11 +875,11 @@ litho_for_monte_carlo.to_csv(path_monte_carlo/"litho_for_monte_carlo.csv", index
 # big sand category for monte carlo analyse at locations with less detail
 sand_sub = df.loc[df[litho_col].isin(["z", "zf", "zm", "zg"])]
 sand_median_normal_scale_ff = sand_sub[ff_col].median()
-sand_mean_log_ff = sand_sub["log10_FF"].mean()
-sand_std_log_ff = sand_sub["log10_FF"].std()
+sand_mean_log_ff = sand_sub["log_FF"].mean()
+sand_std_log_ff = sand_sub["log_FF"].std()
 sand_median_normal_scale_surfcond = sand_sub[surfcond_col].median()
-sand_mean_log_surfcond = sand_sub["log10_surfcond"].mean()
-sand_std_log_surfcond = sand_sub["log10_surfcond"].std()
+sand_mean_log_surfcond = sand_sub["log_surfcond"].mean()
+sand_std_log_surfcond = sand_sub["log_surfcond"].std()
 n_sand = len(sand_sub)
 
 sand_clay_for_monte_carlo = litho_for_monte_carlo.loc[litho_for_monte_carlo[litho_col]== "k"].copy()
@@ -916,15 +916,15 @@ dunn_surfcond_facies.to_csv(path_results / "dunn_surfcond_facies.csv", index=Fal
 agg_facies = (
     df.groupby(facies_col)
     .agg(
-        n=("log10_FF", "count"), 
+        n=("log_FF", "count"), 
 
         # log-scale statistics
-        median_log_ff=("log10_FF", "median"),
-        median_log_surfcond=("log10_surfcond", "median"),
-        mean_log_ff=("log10_FF", "mean"),
-        mean_log_surfcond=("log10_surfcond", "mean"),
-        std_log_ff=("log10_FF", "std"), # std already for sample group (i.e. delta degree of freedom =1)
-        std_log_surfcond=("log10_surfcond", "std"), 
+        median_log_ff=("log_FF", "median"),
+        median_log_surfcond=("log_surfcond", "median"),
+        mean_log_ff=("log_FF", "mean"),
+        mean_log_surfcond=("log_surfcond", "mean"),
+        std_log_ff=("log_FF", "std"), # std already for sample group (i.e. delta degree of freedom =1)
+        std_log_surfcond=("log_surfcond", "std"), 
     )
     .reset_index())
 
