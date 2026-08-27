@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import scipy.stats as st
 
 # hoe werken al die distributies nu
-rho = 28.47
+rho = 5 # 28.47
 rho_std = 1.362
 
 confint68 = [rho/rho_std, rho*rho_std]
@@ -31,12 +31,12 @@ fitted_prms2 = st.lognorm.fit(samples2)
 
 #### Deze dus niet...
 # lognorm with log10
-samples3 = np.random.lognormal(
-    mean=np.log10(rho),
-    sigma=np.log10(rho_std),
-    size=10000,
+samples3 = rho * 10**(np.random.normal(
+        loc=0.0,
+        scale=np.log10(rho_std),
+        size=10000,
+        )
     )
-
 fitted_prms3 = st.lognorm.fit(samples3)
 
 
@@ -74,7 +74,8 @@ def plot_cdf(samples, fitted_prms=None, ax=None, color="b", ls="-", label=""):
     return ax
 
 ax = plot_cdf(samples, fitted_prms, label="lognorm")
-plot_cdf(samples2, fitted_prms2, color="green",ls="--",label="log(norm)", ax=ax)
+plot_cdf(samples2, fitted_prms2, color="green",ls="--",label="ln(norm)", ax=ax)
+plot_cdf(samples3, fitted_prms3, color="orange",ls="--",label="log10(norm)", ax=ax)
 plot_cdf(samples4, dist_prms, color="red",ls=":",label="dist prms", ax=ax)
 plt.grid()
 plt.legend()
