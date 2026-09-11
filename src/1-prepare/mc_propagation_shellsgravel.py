@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.stats as st
 from scipy.integrate import quad
@@ -59,7 +60,7 @@ def d_n(n):
     return 2 * ezmax
 
 def plot(litho, F, dist, fn=None):
-    plt.hist(F, 100)
+    plt.hist(F, 100, alpha=.5)
     ymin,ymax = plt.ylim()
     mu = dist.mean()
     p50 = dist.median()
@@ -68,8 +69,15 @@ def plot(litho, F, dist, fn=None):
     plt.vlines(mu, ymin,ymax, ls="-", label=f"mu = {mu:.1f}")
     plt.vlines(p50, ymin,ymax, ls="-.", label=f"median = {p50:.1f}")
     plt.vlines(confint, ymin,ymax, ls=":", label=f"stdev = {sigma:.1f}")
+    plt.ylim(ymin,ymax)
     plt.grid()
     plt.legend()
+    ax2 = plt.twinx()
+    X = np.linspace(0,np.max(F),1000)
+    ax2.plot(X,dist.pdf(X))
+    ymin2,ymax2 = plt.ylim()
+    plt.ylim(0,ymax2)
+
     plt.title(f"Estimated formation factor for {litho}")
     if fn is None:
         plt.show()
@@ -120,9 +128,15 @@ for litho in ["shells","gravel"]:
 #### Dan: MonteCarlo om F te karakteriseren
 # draw n samples and calculate F
 n = 10_000
+result = {}
 for litho in ["shells","gravel"]:
     m = characteristics[litho]["m"]["dist"].rvs(n)
     poros = characteristics[litho]["poros"]["dist"].rvs(n)
     F = archie(poros, m)
     res = st.lognorm.fit(F)
     fitted_dist = st.lognorm(*res)
+    result[litho] = {"dist":"lognorm","mu":fitted_dist.mean(), "std":fitted_dist.std()}
+    plot(litho, F, fitted_dist, fn=path_output / f"pdf_{litho}.png")
+
+result = pd.DataFrame(result)
+result.to_csv(path_output / "fitted_dist.csv")
