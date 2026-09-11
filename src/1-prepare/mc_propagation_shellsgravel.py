@@ -1,12 +1,14 @@
+#%%
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as st
 from scipy.integrate import quad
 from pathlib import Path
+import pandas as pd
 
 ## from information Ronald(measured porosities) and literature review on ranges of m (copilot)
 m_shells = [1.7, 3.]
-poros_shells = [.44, .502]    # breder: [.36, .502]
+poros_shells = [.36, .502]    # breder: [.36, .502] #[.44, .502]
 n_samples_shells = 14
 
 m_gravel = [1.4, 1.8]
@@ -100,9 +102,10 @@ for litho in ["shells","gravel"]:
         mu_hat = 0.5 * (ymin + ymax)
 
         # Blom approximation
+        # TODO: volgens mij moet de -CDF-1 positief zijn (dus CDF-1) in E(r,n) = -CDF-1 ((r - a) / (n - 2a+1))
         z = st.norm.ppf((n - 0.375)/(n + 0.25))  # Blom's approximation is: E(r,n) = -CDF-1 ((r - a) / (n - 2a+1))   --> so, r expected largest order. rangnummer r van het maximum is n
         # estimate lognormal parameters
-        sigma_blom = np.log(xmax/xmin)/(2*z)
+        sigma_blom = np.log(xmax/xmin)/(2*z) # geeft sigma_log (sigma van onderliggende normaal verdeling van log getransformeerde dataset)
 
         # wat ook kan: integratie van d_n
         dn = d_n(n)
@@ -112,17 +115,37 @@ for litho in ["shells","gravel"]:
         
         # corresponding distribution:
         print(f"{litho},{prm}: {mu_hat}, {sigma_blom}, {sigma_dn}")
-        dist = st.lognorm(s=sigma_dn, scale=np.exp(mu_hat))
+        dist = st.lognorm(s=sigma_dn, scale=np.exp(mu_hat)) # st.lognorm(s=sigma_log, scale=np.exp(mu_log)) -> geeft waardes terug in de oorspronkeljke ruimte
         characteristics[litho][prm]["dist"] = dist
 
 
 
 #### Dan: MonteCarlo om F te karakteriseren
 # draw n samples and calculate F
-n = 10_000
+rows = []
+n = 1000000
 for litho in ["shells","gravel"]:
     m = characteristics[litho]["m"]["dist"].rvs(n)
     poros = characteristics[litho]["poros"]["dist"].rvs(n)
     F = archie(poros, m)
     res = st.lognorm.fit(F)
+    shape, loc, scale = res
     fitted_dist = st.lognorm(*res)
+
+    print(f"FF {litho}: sigma_log = {shape}, scale or exp(mu_log) = {scale}, mu_log = {np.log(scale)}")
+
+    rows.append(
+        {
+            "parameter": litho,
+            "FF scale": round(scale,1),
+            "FF mu_log": round(np.log(scale),1),
+            "FF MSD": round(np.exp(shape),1),
+            "FF sigma_log": round(shape,1),
+        }
+    )
+
+results_df = pd.DataFrame(rows)
+
+results_df.to_csv(f"{path_output}/FF_shells_gravel")
+
+#%%
