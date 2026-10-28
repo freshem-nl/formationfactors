@@ -39,7 +39,7 @@ fn_labresults_inc_grainsize = path_labresults / "20260126_tbl05_Measurementdata_
 
 alpha = 0.1
 
-SIP5 = False # include (True) of exclude (False) SIP5
+SIP5 = True # include (True) of exclude (False) SIP5
 
 if SIP5 == True:
     path_results = Path("data/4-output/ff_ecs_uncertainty/SIP3_SIP5_combined/dunn_test_results_lithostrat")
