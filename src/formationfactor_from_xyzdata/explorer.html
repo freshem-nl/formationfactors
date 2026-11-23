@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REGIS | Groundwater &amp; bulk EC at 25 C</title>
+<style>
+:root{font:14px/1.5 system-ui,sans-serif;color:#203343;background:#f3f6f7;--teal:#087f86;--orange:#be5b31}
+*{box-sizing:border-box}body{margin:0}header{background:#173c48;color:white;padding:23px 30px}
+header h1{font-size:25px;margin:0}header p{margin:5px 0 0;color:#c0d8dd}
+main{display:grid;grid-template-columns:270px minmax(0,1fr);gap:20px;padding:22px;max-width:1800px;margin:auto}
+aside,.card{background:white;border:1px solid #dce5e8;border-radius:10px;padding:18px}
+aside{align-self:start}h2{font-size:17px;margin:0 0 14px}h3{font-size:14px;margin:20px 0 8px}
+label{display:block;font-weight:600;margin:12px 0 5px}label.check{font-weight:400;display:flex;gap:8px;align-items:center}
+select,input[type=number]{width:100%;padding:8px;border:1px solid #b8cbd0;border-radius:5px;background:white;color:inherit}
+input[type=checkbox]{accent-color:var(--teal)}button{padding:8px 13px;border:1px solid #b5c9cf;border-radius:5px;background:white;color:#203343;cursor:pointer;font:inherit}
+button:hover{background:#edf5f5}button:disabled{opacity:.45;cursor:default}button.primary{background:var(--teal);color:white;border-color:var(--teal)}
+small,.muted{color:#5a707d}small{display:block;margin-top:6px}section{min-width:0}.card{margin-bottom:16px}
+.topline,.toolbar,.stats{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.stats{justify-content:flex-start;gap:30px;margin:12px 0 18px}.stat strong{display:block;font-size:26px;color:#173c48}.stat span{color:#5a707d}
+.toolbar{justify-content:flex-start;margin:12px 0}.toolbar select{width:auto}#plot,#chloride-plot{width:100%;height:auto;display:block;touch-action:none;user-select:none;background:white}
+.chart-wrap{position:relative}#tooltip{position:absolute;background:#173c48;color:white;padding:10px;border-radius:5px;max-width:300px;pointer-events:none;z-index:2;white-space:pre-line;font-size:12px}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px}.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.notice{background:#eef6f6;border-left:3px solid var(--teal);padding:10px 12px;margin:10px 0}
+.warning{background:#fff5e5;border-color:#c28221}table{border-collapse:collapse;width:100%;font-size:12px}th,td{text-align:left;padding:9px;border-bottom:1px solid #e3eaed;white-space:nowrap}th{color:#4d6674;background:#f7f9fa}
+.scroll{overflow:auto;max-height:350px}.selected-row{background:#e8f4f4}summary{cursor:pointer;font-weight:600}.error{color:#9e2525}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}a{color:var(--teal)}
+@media(max-width:900px){main{grid-template-columns:1fr;padding:12px}aside{display:grid;grid-template-columns:1fr 1fr;gap:0 15px}aside h2,aside small,aside h3{grid-column:1/-1}header{padding:20px}.stats{gap:20px}}
+</style>
+</head>
+<body>
+<header><h1>Groundwater EC &amp; bulk EC at 25 &deg;C</h1><p>REGIS explorer &nbsp;/&nbsp; compare formations, inspect observations, test exclusions</p></header>
+<main>
+<aside aria-label="Dataset filters">
+<h2>Explore the dataset</h2>
+<div><label for="assignment">REGIS assignment at</label><select id="assignment"><option value="chloride">Chloride observation</option><option value="log">Electrical log</option></select></div>
+<div><label for="formation">Formation / unit group</label><select id="formation"></select></div>
+<div><label for="unit">REGIS layer</label><select id="unit"></select></div>
+<small>Formation names come from the input dataset's descriptions, grouped before the first comma. Unmapped codes remain separate. Exact layer codes are retained.</small>
+<div><label for="source">Electrical source</label><select id="source"><option value="">All sources</option><option>LAS</option><option>ECPT</option></select></div>
+<div><label for="distance">Maximum XY separation (m)</label><input id="distance" type="number" min="0" max="250" step="1" value="250"></div>
+<label class="check"><input id="inside" type="checkbox">Inside chloride screen only</label>
+<label class="check"><input id="same" type="checkbox">Same REGIS layer at both locations</label>
+<h3>Outlier experiments</h3>
+<div><label for="cap">Bulk EC ceiling at 25 &deg;C (mS/cm)</label><input id="cap" type="number" min="0" step="0.5" placeholder="No limit"></div>
+<div><label for="residual">Residual outlier rule</label><select id="residual"><option value="">Off</option><option value="4.5">Beyond 4.5 robust SD</option><option value="3">Beyond 3 robust SD</option><option value="2">Beyond 2 robust SD</option></select></div>
+<small>Residuals are measured from the unmodified filtered OLS fit. Robust SD = 1.4826 &times; median absolute deviation. One pass only; excludes points, not whole logs.</small>
+<button id="reset-all" style="margin-top:16px">Reset all filters &amp; exclusions</button>
+</aside>
+<section>
+<div class="card">
+<div class="topline"><h2 style="margin:0">The relation</h2><span class="muted" id="scope"></span></div>
+<div class="notice">X: EC groundwater,25 = (1000 &times; Cl + 450) / 360. Y: EC bulk,25 = 1.36 &times; 10 &times; bulk conductivity (S/m). Cl is in g/L; both plotted ECs are in mS/cm at 25 &deg;C. Based on Cl[mg/L] = 360 &times; EC25 &minus; 450 and EC25 = 1.36 &times; EC11. Original bulk measurements are assumed to be at 11 &deg;C. No clipping is applied.</div>
+<div class="stats" aria-live="polite">
+<div class="stat"><strong id="n-filtered">0</strong><span>filtered pairs</span></div>
+<div class="stat"><strong id="n-retained">0</strong><span>retained pairs</span></div>
+<div class="stat"><strong id="n-logs">0</strong><span>retained logs</span></div>
+<div class="stat"><strong id="n-excluded">0</strong><span>excluded pairs</span></div>
+</div>
+<div class="legend"><span><i style="background:#087f86"></i>LAS</span><span><i style="background:#be5b31"></i>ECPT</span><span style="color:#87949b">Cross = excluded</span><span>Dark = free intercept</span><span style="color:#9251a0">Purple = fixed minimum</span><span>Dashed = before; solid = after exclusions</span><span>Shaded = 95% mean CI</span></div>
+<div class="toolbar">
+<label for="mode" class="sr">Drag action</label><select id="mode"><option value="zoom">Drag to zoom</option><option value="select">Drag to select points</option></select>
+<button id="reset-view">Reset zoom</button>
+<label class="check" style="margin:0"><input id="logx" type="checkbox">Log X</label>
+<label class="check" style="margin:0"><input id="logy" type="checkbox">Log Y</label>
+</div>
+<div class="chart-wrap"><svg id="plot" viewBox="0 0 1000 500" role="img" aria-label="Interactive scatter plot of bulk EC (y) versus groundwater EC (x) at 25 degrees C in mS/cm"></svg><div id="tooltip" hidden></div></div>
+<small>Scroll over the plot to zoom; drag a rectangle to zoom or select. Click a point (or a row below) to toggle selection. Double-click to reset zoom. Zooming never changes the fit.</small>
+<div class="toolbar"><strong id="selected-count" aria-live="polite">0 selected</strong><button id="exclude-selected" class="primary">Exclude selected points</button><button id="clear-selection">Clear selection</button><button id="restore">Restore manual exclusions</button></div>
+<div id="messages" role="status" aria-live="polite"></div>
+</div>
+<div class="card"><h2>Bulk EC25 directly versus chloride</h2>
+<div class="toolbar"><button id="reset-chloride-view">Reset chloride zoom</button></div>
+<svg id="chloride-plot" viewBox="0 0 1000 500" role="img" aria-label="Bulk EC at 25 degrees C versus groundwater chloride in g/L"></svg>
+<small>Same filtered observations, manual selections and exclusions as the main figure. Colours, crosses, before/after lines and confidence bands use the same convention. Scroll to zoom; double-click to reset. Click a point to toggle its shared selection. This figure uses linear axes independently of the main plot.</small>
+<p id="chloride-equation"></p>
+<small>The fitted lines are expressed directly as EC bulk,25 = A + B &times; chloride[g/L], using EC groundwater,25 = 1.25 + (1000/360) &times; chloride. Thus A = a + 1.25b and B = (1000/360)b. The purple constraint remains fixed at minimum bulk EC at zero groundwater EC, not at zero chloride.</small>
+</div>
+<div class="card"><h2>Formation factor &amp; surface conductivity at 25 &deg;C</h2>
+<div class="notice">Model: EC bulk,25 = EC groundwater,25 / F + &sigma;surface,25. For the fitted relation y = a + b &times; x: <strong>F = 1/b</strong> (dimensionless), <strong>&sigma;surface,25 = a</strong> (mS/cm). Divide by 10 for S/m. Purple fit: &sigma;surface,25 is fixed to the minimum bulk EC of the relevant subset.</div>
+<div class="scroll"><table id="parameter-table"><thead><tr><th>Dataset</th><th>F (&minus;)</th><th>95% F CI</th><th>&sigma;surface (mS/cm)</th><th>95% &sigma;surface CI (mS/cm)</th><th>&sigma;surface (S/m)</th><th>Interpretation / warnings</th></tr></thead><tbody></tbody></table></div>
+<small>Formation-factor intervals transform each bootstrap slope as 1/b and are suppressed when the slope interval reaches or falls below zero. Fixed-minimum surface-conductivity intervals collapse to the chosen constant by construction; they do not imply that physical surface conductivity is known exactly. Negative surface conductivity and F &lt; 1 are reported, not clipped or constrained. Pooled formations and sources need not share one formation factor.</small>
+<h3>Before / after regression statistics</h3>
+<div class="scroll"><table id="fit-table"><thead><tr><th>Dataset</th><th>Pairs / logs</th><th>Intercept (mS/cm)</th><th>Slope (dimensionless)</th><th>95% slope CI</th><th>R&sup2;</th><th>Residual RMSE (mS/cm)</th></tr></thead><tbody></tbody></table></div>
+<p id="equation" style="font-weight:600"></p>
+<p id="fixed-equation" style="font-weight:600;color:#9251a0"></p>
+<small>OLS fits EC bulk,25 = intercept + slope &times; EC groundwater,25 in original units. Axes are swapped relative to the earlier app; both regressions are fitted in this new forward direction, not algebraically inverted. The fixed-minimum fit uses a = min(EC bulk,25) of its own before/after subset and b = &Sigma;[x(y &minus; a)] / &Sigma;x&sup2;. The minimum is recalculated after exclusions. R&sup2; = 1 &minus; SSE/SST uses the same centred SST for both models and can be negative for a fixed intercept.</small>
+<small>95% pointwise mean bands use 1,500 source-stratified whole-log bootstrap draws (fixed seed). The fixed-minimum bootstrap holds the observed minimum constant: its uncertainty is conditional on that chosen minimum, not uncertainty in the minimum itself. At least 3 logs are required for bootstrap intervals. Lines extend to x = 0 on linear axes to show intercepts; this is extrapolation outside the observed groundwater-EC range. RMSE is in-sample, not a prediction interval. Conversion-factor uncertainty is not included.</small>
+<div class="notice warning">Exclusion is a sensitivity experiment, not evidence that a measurement is wrong. Confidence intervals after data-driven exclusions are exploratory and do not account for the selection process, lithology, measurement bias, time differences or spatial matching uncertainty.</div>
+<div class="toolbar"><button id="download-data">Download filtered observations + exclusion flags</button><button id="download-fits">Download regression comparison</button></div>
+</div>
+<div class="card"><details open><summary>Inspect observations <span id="table-count" class="muted"></span></summary>
+<label for="search">Find a location, log, layer or pair ID</label><input id="search" type="search" placeholder="e.g. S48E00029" style="padding:8px;width:100%;margin-bottom:10px">
+<div class="scroll"><table id="observations"><thead><tr><th>Select</th><th>Pair ID</th><th>Log</th><th>Source</th><th>EC groundwater,25 (mS/cm)</th><th>EC bulk,25 (mS/cm)</th><th>Chloride (g/L)</th><th>REGIS layer</th><th>XY (m)</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+<small>Showing the first 200 matching rows, highest bulk EC first. Downloads include all filtered rows, original chloride and bulk conductivity, and derived EC at 25 and 11 &deg;C for traceability. Manual exclusions persist when filters change, until restored; source data is never modified. Reloading the page resets the experiment.</small>
+</details></div>
+</section>
+</main>
+<script id="dataset" type="application/json">__DATA_JSON__</script>
+<script src="explorer.js"></script>
+</body>
+</html>
