@@ -109,3 +109,30 @@ can override the default paths.
   the before/after comparison and regression CSV export.
   Lines extend to x = 0 on linear axes to expose the intercept (extrapolation).
   Centred R-squared can be negative for the fixed-intercept fit.
+
+Test avenue: direct bulk EC -> chloride (branch `direct-ecbulk-chloride`)
+-----------------------------------------------------------------------
+
+Exploratory only, not meant for incorporation in hem2chloride. Bypasses the formation
+factor / surface conductivity chain by converting HEM bulk EC directly to chloride.
+Requires the chloride_uncertainties repository next to this one (or
+`CHLORIDE_UNCERTAINTIES_ROOT`): its model library (`fit_ec_chloride.py`), the HEM test
+set and chain results of `compare_cl_relations.py` and `hem2chloride.py` are read, not changed.
+
+1. `python src\formationfactor_from_xyzdata\fit_direct_ecbulk_chloride.py`
+   fits `ln Cl ~ shifted power law(ECbulk) + Student-t error with quadratic ln sigma`
+   to the collocated pairs (ECbulk = 10 x conductivity in S/m, in situ, no temperature
+   correction). Pairs within 500 m of (or from the wells of) the validation points are held out.
+   - geology-unaware: one generic relation;
+   - formation-aware: per REGIS unit, else per formation, if >= 50 pairs from >= 10 logs,
+     else generic; the group fits its own level `a` (and background shift `e0` if it has
+     >= 15 pairs with Cl >= 150 mg/l); shape and error model are shared. Compared by
+     5-fold cross-validation grouped by log.
+2. `python src\formationfactor_from_xyzdata\compare_direct_vs_hem2chloride.py [n_mc]`
+   samples the HEM resistivity as hem2chloride does, converts bulk EC directly to chloride
+   (REGIS unit at the HEM layer midpoint for the formation-aware version), and compares with
+   the chain (previous linear and current area relation) on the 16 test lines per block
+   (N-B2, NH-B2, Z-C3) and with validation measurements >= 1980.
+
+Outputs: `reports\direct_ecbulk_chloride\` (figures, tables, JSON summaries) and
+`data\4-output\direct_ecbulk_chloride\` (fit and per-layer results).

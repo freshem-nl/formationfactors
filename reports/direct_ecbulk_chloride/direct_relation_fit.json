@@ -1,0 +1,592 @@
+{
+ "data": {
+  "input_pairs": 3743,
+  "after_plausibility": 3741,
+  "held_out_validation": 156,
+  "fit_pairs": 3585,
+  "fit_logs": 489,
+  "fit_wells": 1108
+ },
+ "formation_aware": {
+  "rule": "REGIS unit, else formation, if >= 50 pairs from >= 10 logs, else generic; a free, e0 free if >= 15 pairs with Cl >= 150 mg/l",
+  "groups": {
+   "unit:NUAPz1": {
+    "level": "unit",
+    "key": "NUAPz1",
+    "n": 241,
+    "n_logs": 65,
+    "n_cl_ge_150": 37,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.336030218445819,
+    "e0": 0.4906262702089551
+   },
+   "unit:NUBRz1": {
+    "level": "unit",
+    "key": "NUBRz1",
+    "n": 88,
+    "n_logs": 48,
+    "n_cl_ge_150": 32,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 7.879393510818945,
+    "e0": 0.514132613957373
+   },
+   "unit:NUBXz3": {
+    "level": "unit",
+    "key": "NUBXz3",
+    "n": 99,
+    "n_logs": 43,
+    "n_cl_ge_150": 20,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 7.380278117516829,
+    "e0": 0.3902413247740808
+   },
+   "unit:NUBXz4": {
+    "level": "unit",
+    "key": "NUBXz4",
+    "n": 69,
+    "n_logs": 37,
+    "n_cl_ge_150": 18,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 7.362850118923503,
+    "e0": 0.34770753238760405
+   },
+   "unit:NUDNz1": {
+    "level": "unit",
+    "key": "NUDNz1",
+    "n": 95,
+    "n_logs": 35,
+    "n_cl_ge_150": 10,
+    "free": [
+     "a"
+    ],
+    "a": 7.914167529893001,
+    "e0": 0.44263290392330207
+   },
+   "unit:NUMSz2": {
+    "level": "unit",
+    "key": "NUMSz2",
+    "n": 88,
+    "n_logs": 57,
+    "n_cl_ge_150": 9,
+    "free": [
+     "a"
+    ],
+    "a": 7.368586756105934,
+    "e0": 0.44263290392330207
+   },
+   "unit:NUMSz3": {
+    "level": "unit",
+    "key": "NUMSz3",
+    "n": 50,
+    "n_logs": 39,
+    "n_cl_ge_150": 12,
+    "free": [
+     "a"
+    ],
+    "a": 7.629578724813968,
+    "e0": 0.44263290392330207
+   },
+   "unit:NUMSz4": {
+    "level": "unit",
+    "key": "NUMSz4",
+    "n": 72,
+    "n_logs": 36,
+    "n_cl_ge_150": 14,
+    "free": [
+     "a"
+    ],
+    "a": 7.525370565032639,
+    "e0": 0.44263290392330207
+   },
+   "unit:NUOOc": {
+    "level": "unit",
+    "key": "NUOOc",
+    "n": 51,
+    "n_logs": 17,
+    "n_cl_ge_150": 29,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 7.976254397716135,
+    "e0": 0.48844748952905925
+   },
+   "unit:NUOOz2": {
+    "level": "unit",
+    "key": "NUOOz2",
+    "n": 244,
+    "n_logs": 118,
+    "n_cl_ge_150": 55,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.221518443054837,
+    "e0": 0.5669020286639191
+   },
+   "unit:NUPEz2": {
+    "level": "unit",
+    "key": "NUPEz2",
+    "n": 128,
+    "n_logs": 42,
+    "n_cl_ge_150": 22,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 9.208608781581091,
+    "e0": 0.6389032852388806
+   },
+   "unit:NUPEz3": {
+    "level": "unit",
+    "key": "NUPEz3",
+    "n": 159,
+    "n_logs": 49,
+    "n_cl_ge_150": 71,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.2086689121741,
+    "e0": 0.45801741968761656
+   },
+   "unit:NUPZ-WAz2": {
+    "level": "unit",
+    "key": "NUPZ-WAz2",
+    "n": 243,
+    "n_logs": 138,
+    "n_cl_ge_150": 43,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.622324235672593,
+    "e0": 0.5506000301175842
+   },
+   "unit:NUPZ-WAz3": {
+    "level": "unit",
+    "key": "NUPZ-WAz3",
+    "n": 343,
+    "n_logs": 137,
+    "n_cl_ge_150": 92,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.025052894494214,
+    "e0": 0.49671670910429444
+   },
+   "unit:NUPZ-WAz4": {
+    "level": "unit",
+    "key": "NUPZ-WAz4",
+    "n": 165,
+    "n_logs": 94,
+    "n_cl_ge_150": 36,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.141225125176486,
+    "e0": 0.486400079821109
+   },
+   "unit:NUPZc": {
+    "level": "unit",
+    "key": "NUPZc",
+    "n": 76,
+    "n_logs": 35,
+    "n_cl_ge_150": 43,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.082533972158657,
+    "e0": 0.42726323650049125
+   },
+   "unit:NUSTz2": {
+    "level": "unit",
+    "key": "NUSTz2",
+    "n": 98,
+    "n_logs": 61,
+    "n_cl_ge_150": 2,
+    "free": [
+     "a"
+    ],
+    "a": 7.848334126559501,
+    "e0": 0.44263290392330207
+   },
+   "unit:NUURz2": {
+    "level": "unit",
+    "key": "NUURz2",
+    "n": 77,
+    "n_logs": 38,
+    "n_cl_ge_150": 17,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 7.67976818768541,
+    "e0": 0.3701537828770292
+   },
+   "unit:NUURz3": {
+    "level": "unit",
+    "key": "NUURz3",
+    "n": 65,
+    "n_logs": 34,
+    "n_cl_ge_150": 29,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.188733591657398,
+    "e0": 0.4467371801470936
+   },
+   "unit:NUhlc": {
+    "level": "unit",
+    "key": "NUhlc",
+    "n": 346,
+    "n_logs": 95,
+    "n_cl_ge_150": 110,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 6.470048332737566,
+    "e0": 0.11630292472576978
+   },
+   "formation:NUAP": {
+    "level": "formation",
+    "key": "NUAP",
+    "n": 241,
+    "n_logs": 65,
+    "n_cl_ge_150": 37,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.336030218445819,
+    "e0": 0.4906262702089551
+   },
+   "formation:NUBR": {
+    "level": "formation",
+    "key": "NUBR",
+    "n": 94,
+    "n_logs": 51,
+    "n_cl_ge_150": 35,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 7.686319175440245,
+    "e0": 0.48430634766447417
+   },
+   "formation:NUBX": {
+    "level": "formation",
+    "key": "NUBX",
+    "n": 202,
+    "n_logs": 84,
+    "n_cl_ge_150": 54,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 6.869637657688928,
+    "e0": 0.29017540336032505
+   },
+   "formation:NUDN": {
+    "level": "formation",
+    "key": "NUDN",
+    "n": 95,
+    "n_logs": 35,
+    "n_cl_ge_150": 10,
+    "free": [
+     "a"
+    ],
+    "a": 7.914167529893001,
+    "e0": 0.44263290392330207
+   },
+   "formation:NUKI": {
+    "level": "formation",
+    "key": "NUKI",
+    "n": 56,
+    "n_logs": 31,
+    "n_cl_ge_150": 12,
+    "free": [
+     "a"
+    ],
+    "a": 7.223133821526308,
+    "e0": 0.44263290392330207
+   },
+   "formation:NUKR": {
+    "level": "formation",
+    "key": "NUKR",
+    "n": 62,
+    "n_logs": 42,
+    "n_cl_ge_150": 22,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 7.404431545560594,
+    "e0": 0.3410924403262093
+   },
+   "formation:NUMS": {
+    "level": "formation",
+    "key": "NUMS",
+    "n": 237,
+    "n_logs": 99,
+    "n_cl_ge_150": 42,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.150120239894116,
+    "e0": 0.5333351476184293
+   },
+   "formation:NUOO": {
+    "level": "formation",
+    "key": "NUOO",
+    "n": 330,
+    "n_logs": 127,
+    "n_cl_ge_150": 90,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.2034291599539,
+    "e0": 0.5599654002662247
+   },
+   "formation:NUPE": {
+    "level": "formation",
+    "key": "NUPE",
+    "n": 379,
+    "n_logs": 81,
+    "n_cl_ge_150": 113,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.22840715607329,
+    "e0": 0.49360728634688583
+   },
+   "formation:NUPZ": {
+    "level": "formation",
+    "key": "NUPZ",
+    "n": 79,
+    "n_logs": 37,
+    "n_cl_ge_150": 43,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.087925895309313,
+    "e0": 0.4328198242314045
+   },
+   "formation:NUPZ-WA": {
+    "level": "formation",
+    "key": "NUPZ-WA",
+    "n": 758,
+    "n_logs": 243,
+    "n_cl_ge_150": 171,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 8.217625104424197,
+    "e0": 0.5063584943005511
+   },
+   "formation:NUST": {
+    "level": "formation",
+    "key": "NUST",
+    "n": 135,
+    "n_logs": 75,
+    "n_cl_ge_150": 2,
+    "free": [
+     "a"
+    ],
+    "a": 7.829205605855422,
+    "e0": 0.44263290392330207
+   },
+   "formation:NUSY": {
+    "level": "formation",
+    "key": "NUSY",
+    "n": 92,
+    "n_logs": 62,
+    "n_cl_ge_150": 4,
+    "free": [
+     "a"
+    ],
+    "a": 7.861206822902588,
+    "e0": 0.44263290392330207
+   },
+   "formation:NUUR": {
+    "level": "formation",
+    "key": "NUUR",
+    "n": 236,
+    "n_logs": 91,
+    "n_cl_ge_150": 60,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 7.932675633800684,
+    "e0": 0.4197857872857144
+   },
+   "formation:NUWA": {
+    "level": "formation",
+    "key": "NUWA",
+    "n": 71,
+    "n_logs": 40,
+    "n_cl_ge_150": 11,
+    "free": [
+     "a"
+    ],
+    "a": 7.970441914036416,
+    "e0": 0.44263290392330207
+   },
+   "formation:NUhl": {
+    "level": "formation",
+    "key": "NUhl",
+    "n": 346,
+    "n_logs": 95,
+    "n_cl_ge_150": 110,
+    "free": [
+     "a",
+     "e0"
+    ],
+    "a": 6.470048332737566,
+    "e0": 0.11630292472576978
+   }
+  },
+  "share_pairs": {
+   "unit": 0.78,
+   "formation": 0.172,
+   "generic": 0.048
+  },
+  "cv": {
+   "mean_lpd_generic": -5.689287302723463,
+   "mean_lpd_formation": -5.639770192413312,
+   "delta_mean": 0.04951711031015122,
+   "delta_se": 0.012210173759747225,
+   "by_litho": {
+    "clay": {
+     "size": 282,
+     "mean": 0.0142
+    },
+    "complex": {
+     "size": 487,
+     "mean": 0.2171
+    },
+    "other": {
+     "size": 5,
+     "mean": 0.0
+    },
+    "sand": {
+     "size": 2811,
+     "mean": 0.0241
+    }
+   },
+   "share_fallback_generic": 0.07447698744769875
+  }
+ },
+ "settings": {
+  "max_conductivity_s_m": 2.5,
+  "holdout_radius_m": 500.0,
+  "x": "ECbulk = 10 * conductivity [S/m], in situ, mS/cm",
+  "n_boot": 200
+ },
+ "aic": {
+  "loglinear_t_constant": 41558.9,
+  "loglinear_t_quadratic": 41411.6,
+  "shiftedpower_t_constant": 40868.7,
+  "shiftedpower_t_quadratic": 40757.0
+ },
+ "recommended": {
+  "name": "shiftedpower_t_quadratic",
+  "mean": "shiftedpower",
+  "dist": "t",
+  "var": "quadratic",
+  "params": {
+   "a": 7.839293509009935,
+   "b": 0.833917065022233,
+   "e0": 0.44263290392330207,
+   "log_tau": -2.1856959345671028,
+   "s0": 0.026151742464843364,
+   "s1": 0.017716148971568858,
+   "s2": -0.046320336764279664,
+   "log_nu": 1.7099553890703194,
+   "nu": 5.528714831013927,
+   "tau": 0.11239948374297745
+  },
+  "se": {
+   "a": 0.08570790064338756,
+   "b": 0.05988258443430379,
+   "e0": 0.03414764463777405,
+   "log_tau": 0.05991299718601806,
+   "s0": 0.045271584905755606,
+   "s1": 0.035652541424327715,
+   "s2": 0.010133495971105065,
+   "log_nu": 0.1052446865134453
+  },
+  "mean_knots": null,
+  "var_knots": null,
+  "loglik": -4992.892027265791,
+  "loglik_cl": -20370.492990900446,
+  "aic": 40756.98598180089,
+  "n": 3585,
+  "n_wells": 489,
+  "x_range": [
+   0.0070883434778749995,
+   9.9
+  ],
+  "weighting": "none",
+  "gamma": 1.0,
+  "units": {
+   "x": "EC25 [mS/cm]",
+   "y": "Cl [mg/l]",
+   "knots": "ln(EC25)"
+  },
+  "formula": "ln(Cl) ~ StudentT(nu)(loc = a + b*ln(tau*softplus((EC25 - e0)/tau)), scale = exp(s0 + s1*u + s2*u^2)), u = ln(EC25)",
+  "boot_lo": {
+   "a": 7.460711810914786,
+   "b": 0.6111595836186229,
+   "e0": 0.3332303609123116,
+   "log_tau": -2.487682325951592,
+   "s0": -0.20752142958366326,
+   "s1": -0.1957951968902892,
+   "s2": -0.1054418636956266,
+   "nu": 4.059391313061,
+   "tau": 0.08310269153272004
+  },
+  "boot_hi": {
+   "a": 8.075137257495225,
+   "b": 1.0151570496209554,
+   "e0": 0.572138111344293,
+   "log_tau": -2.00600704691186,
+   "s0": 0.2918224196733694,
+   "s1": 0.24338792304144227,
+   "s2": 0.013794690600387401,
+   "nu": 10.39821655697735,
+   "tau": 0.134524901471956
+  }
+ },
+ "lithology_counts": {
+  "sand": 2811,
+  "complex": 487,
+  "clay": 282,
+  "other": 5
+ },
+ "share_cl_ge_150": 0.2407252440725244,
+ "share_cl_ge_1000": 0.10794979079497909
+}
