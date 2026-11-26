@@ -319,6 +319,9 @@ def build(fit, cmp_, val, cov, resid, lines):
              "formation-aware direct conversion, and the change of the detail class of Q25, Q50 and "
              "Q75.", width=14.5)
     R.figure(REP / f"section_Z_line{z_line}.png", f"South, line {z_line}; as Figure 4.", width=14.5)
+    R.p("Appendix B shows the median chloride of the chain, the generic and the formation-aware "
+        "direct relation along nine lines: per block the line with the most, a median and the least "
+        "change in class.")
 
     # --- 5 validation --------------------------------------------------------
     R.h("5  Validation")
@@ -427,9 +430,27 @@ def build(fit, cmp_, val, cov, resid, lines):
         ["Chain results, test set, validation points",
          "chloride_uncertainties: src/4-analyze/compare_cl_relations.py (branch ec-chloride-relation)"],
         ["This document", "src/formationfactor_from_xyzdata/write_direct_ecbulk_report.py"],
-        ["Outputs", "reports/direct_ecbulk_chloride/"],
+        ["Outputs", "reports/direct_ecbulk_chloride/ (Appendix B: appendix/)"],
     ], "Scripts and outputs (repository formationfactors, branch direct-ecbulk-chloride).",
         widths=[5.0, 11.4], align="ll")
+
+    # --- appendix B: example lines ------------------------------------------
+    picks = pd.read_csv(REP / "appendix" / "appendix_lines.csv")
+    R.page_break()
+    R.h("Appendix B  Example sections")
+    R.p("Median chloride along nine test lines with the chain (GeoTOP lithology, formation factor, "
+        "surface conductivity and the area relation; current hem2chloride), the generic direct "
+        "relation and the formation-aware direct relation. Per block the lines were chosen by the "
+        "share of layers whose detail class of Q25, Q50 or Q75 differs between the formation-aware "
+        "relation and the chain: the most changed line, the median line and the least changed line. "
+        "The title of each figure gives the share of layers in the Holocene (REGIS unit NUhlc), "
+        "where the formation-aware relation differs most from the generic one.")
+    for _, row in picks.iterrows():
+        lab = {"north": "North (N-B2)", "noord-holland": "Noord-Holland (NH-B2)", "south": "South (Z-C3)"}[row.area]
+        R.figure(REP / "appendix" / row.file,
+                 f"{lab}, line {row.line_no} ({row.label}; {pct(row.class_change)} of the layers change "
+                 "class on average over Q25, Q50 and Q75). From top to bottom: chain with area relation, "
+                 "direct generic, direct formation-aware.", width=13.0)
     return R
 
 

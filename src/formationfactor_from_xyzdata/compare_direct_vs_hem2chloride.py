@@ -315,6 +315,51 @@ def fig_line(area, res, line_no, path):
     plt.close(fig)
 
 
+def fig_line_medians(area, res, line_no, label, path):
+    """Median Cl along a line: chain (area relation), direct generic, direct formation-aware."""
+    d = res[res.line_no == line_no].copy()
+    dist = ccr._distance(d)
+    fig, axes = plt.subplots(3, 1, figsize=(11, 8.2), sharex=True, constrained_layout=True)
+    cmap = ListedColormap(ccr.CL_COL)
+    bounds = [0] + ccr.CL_LEV + [ccr.MAX_CL]
+    norm = BoundaryNorm(bounds, cmap.N)
+    for ax, r in zip(axes, ("chain_regional", "direct", "direct_fa")):
+        pc = ccr._section(ax, d, dist, d[f"{r}_cl_q50"], cmap, norm)
+        ax.set_title(f"Median Cl, {LABEL[r]}", loc="left", fontsize=10, color=INK)
+        ax.set_ylabel("z [m NAP]", fontsize=9)
+        ccr._style(ax)
+    cb = fig.colorbar(pc, ax=axes, shrink=0.8, aspect=35, pad=0.01, spacing="uniform", ticks=bounds[1:-1])
+    cb.ax.set_yticklabels([f"{v:,.0f}" for v in bounds[1:-1]])
+    cb.set_label("median Cl [mg/l]", fontsize=9)
+    cb.ax.tick_params(labelsize=7)
+    axes[-1].set_xlabel("distance along line [km] (gaps shortened)", fontsize=9)
+    share_h = float((d["regis_unit"] == "NUhlc").mean())
+    fig.suptitle(f"{ccr.AREAS[area]['label']}, line {line_no} ({label}); Holocene (NUhlc) in "
+                 f"{share_h:.0%} of the layers", x=0.01, ha="left", fontsize=11, color=INK)
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+
+
+def appendix_lines(results: dict, out_dir: Path) -> list[dict]:
+    """Three lines per area: most changed, median and least changed (class change of the
+    formation-aware relation vs the chain)."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for f in out_dir.glob("line_*.png"):
+        f.unlink()
+    picks = []
+    for area, res in results.items():
+        rk = rank_lines(res)
+        n = len(rk)
+        for pos, label in ((0, "most changed"), (n // 2, "median change"), (n - 1, "least changed")):
+            ln = int(rk.index[pos])
+            path = out_dir / f"line_{ccr.AREAS[area]['abbr']}_{ln}.png"
+            fig_line_medians(area, res, ln, label, path)
+            picks.append({"area": area, "line_no": ln, "label": label, "file": path.name,
+                          "class_change": float(rk.iloc[pos]["class_change"])})
+    pd.DataFrame(picks).to_csv(out_dir / "appendix_lines.csv", index=False)
+    return picks
+
+
 def fig_overview(results: dict, path: Path):
     fig, axes = plt.subplots(2, 3, figsize=(13.5, 8), constrained_layout=True)
     for j, (area, res) in enumerate(results.items()):
@@ -439,6 +484,7 @@ def main(n_mc=N_MC, n_plot_lines=1):
         for ln in rk.index[:n_plot_lines]:
             fig_line(area, res, int(ln), OUT_REP / f"section_{ccr.AREAS[area]['abbr']}_line{int(ln)}.png")
     fig_overview(results, OUT_REP / "fig_overview.png")
+    appendix_lines(results, OUT_REP / "appendix")
 
     val, sc = {}, []
     for area in ccr.AREAS:
