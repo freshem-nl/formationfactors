@@ -429,15 +429,25 @@ for litho in lithoklasse_uit_literatuur:
         group = ""
         n = np.nan
         dist_type = "norm"  # literature value in linear space
-    elif litho == "a": # for "antropogeen" use statistics of this lithoklasse as replacement for missing values
-        mean_dist_ff = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "mean_log_ff"].values[0]
-        mean_dist_surfcond = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "mean_log_surfcond"].values[0]
-        std_dist_ff = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "std_log_ff"].values[0]
-        std_dist_surfcond = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "std_log_surfcond"].values[0]
-        n = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "n"].values[0]
-        source = "statistiek"
-        group = f"{replacement_litho}"
-        dist_type = "lognorm"  # statistics of replacement_litho are in ln-space
+    elif litho == "a": # for "antropogeen" use the generic (lithoclass-level) statistics of replacement_litho, including its dist_type
+        generic = lookup_table.loc[
+            (lookup_table["LITHOKLASSE_CD"] == replacement_litho)
+            & (lookup_table["groepering_statistiek"] == replacement_litho)
+        ]
+        if generic.empty:
+            raise ValueError(
+                f"no row with the generic statistics of lithoclass '{replacement_litho}' "
+                f"(groepering_statistiek == '{replacement_litho}') to copy for 'a'"
+            )
+        generic = generic.iloc[0]
+        mean_dist_ff = generic["mean_dist_ff"]
+        mean_dist_surfcond = generic["mean_dist_surfcond"]
+        std_dist_ff = generic["std_dist_ff"]
+        std_dist_surfcond = generic["std_dist_surfcond"]
+        n = generic["n"]
+        source = generic["statistiek_literatuur"]
+        group = generic["groepering_statistiek"]
+        dist_type = generic["dist_type"]
 
     mask = ((lookup_table["LITHOKLASSE_CD"] == litho) & (lookup_table["mean_dist_ff"].isna()))
 
