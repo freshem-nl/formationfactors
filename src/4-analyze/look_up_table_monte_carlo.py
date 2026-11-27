@@ -419,6 +419,7 @@ for litho in lithoklasse_uit_literatuur:
         source = "literatuur"
         group = ""
         n = np.nan
+        dist_type = "norm"  # literature value in linear space
     elif litho == "sch":
         mean_dist_ff = mean_dist_ff_schelpen
         mean_dist_surfcond = 0
@@ -427,6 +428,7 @@ for litho in lithoklasse_uit_literatuur:
         source = "literatuur"
         group = ""
         n = np.nan
+        dist_type = "norm"  # literature value in linear space
     elif litho == "a": # for "antropogeen" use statistics of this lithoklasse as replacement for missing values
         mean_dist_ff = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "mean_log_ff"].values[0]
         mean_dist_surfcond = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "mean_log_surfcond"].values[0]
@@ -435,6 +437,7 @@ for litho in lithoklasse_uit_literatuur:
         n = results_litho.loc[results_litho["LITHOKLASSE_CD"] == replacement_litho, "n"].values[0]
         source = "statistiek"
         group = f"{replacement_litho}"
+        dist_type = "lognorm"  # statistics of replacement_litho are in ln-space
 
     mask = ((lookup_table["LITHOKLASSE_CD"] == litho) & (lookup_table["mean_dist_ff"].isna()))
 
@@ -452,7 +455,7 @@ for litho in lithoklasse_uit_literatuur:
         n
     ]
 
-    lookup_table.loc[mask, "dist_type"] = "norm"
+    lookup_table.loc[mask, "dist_type"] = dist_type
     lookup_table.loc[mask, "statistiek_literatuur"] = source
     lookup_table.loc[mask, "groepering_statistiek"] = group
 
